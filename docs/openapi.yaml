@@ -1,0 +1,1148 @@
+openapi: 3.0.3
+info:
+  title: PicFlow API
+  version: 1.0.0
+  description: |
+    API de gestion de workflow de validation de photos pour les églises.
+
+    ## Authentification
+
+    - **Admin/Équipe Photo** : Google OAuth via NextAuth.js (cookie de session)
+    - **Validateur** : Token unique dans l'URL (`/api/validate/{token}`)
+    - **Équipe Média** : Token unique ou session authentifiée
+
+    ## Flux principal
+
+    1. Admin crée un événement et upload des photos
+    2. Admin génère un lien de validation (token)
+    3. Validateur accède au lien, valide/rejette les photos
+    4. Équipe média télécharge les photos validées
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: ICC Bretagne
+    url: https://github.com/iccbretagne/picflow
+
+servers:
+  - url: https://picflow.example.com
+    description: Production
+  - url: http://localhost:3000
+    description: Développement local
+
+tags:
+  - name: Events
+    description: Gestion des événements (Admin authentifié)
+  - name: Photos
+    description: Upload et gestion des photos (Admin authentifié)
+  - name: Validation
+    description: Interface de validation (Token requis)
+  - name: Download
+    description: Téléchargement des photos validées (Token ou Admin)
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: Cookie de session NextAuth.js (Google OAuth)
+    tokenAuth:
+      type: apiKey
+      in: path
+      name: token
+      description: Token de partage unique (64 caractères hex)
+
+  schemas:
+    # === ENUMS ===
+    EventStatus:
+      type: string
+      enum: [DRAFT, PENDING_REVIEW, REVIEWED, ARCHIVED]
+      description: |
+        - `DRAFT`: En cours d'upload
+        - `PENDING_REVIEW`: En attente de validation
+        - `REVIEWED`: Validation terminée
+        - `ARCHIVED`: Archivé
+
+    PhotoStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+      description: |
+        - `PENDING`: En attente de validation
+        - `APPROVED`: Validée
+        - `REJECTED`: Rejetée
+
+    TokenType:
+      type: string
+      enum: [VALIDATOR, MEDIA]
+      description: |
+        - `VALIDATOR`: Peut valider/rejeter les photos
+        - `MEDIA`: Peut uniquement télécharger les photos validées
+
+    # === COMMON ===
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Le champ 'name' est requis
+            details:
+              type: object
+              additionalProperties: true
+
+    Pagination:
+      type: object
+      required: [total, page, limit, pages]
+      properties:
+        total:
+          type: integer
+          example: 42
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        pages:
+          type: integer
+          example: 3
+
+    # === EVENT ===
+    Event:
+      type: object
+      required: [id, name, date, church, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: cuid
+          example: clx1234567890abcdef
+        name:
+          type: string
+          example: Culte du 19 janvier
+        date:
+          type: string
+          format: date-time
+          example: "2025-01-19T10:00:00Z"
+        church:
+          type: string
+          example: ICC Rennes
+        description:
+          type: string
+          nullable: true
+          example: Culte dominical avec baptêmes
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EventWithStats:
+      allOf:
+        - $ref: '#/components/schemas/Event'
+        - type: object
+          required: [photoCount, approvedCount, rejectedCount, pendingCount]
+          properties:
+            photoCount:
+              type: integer
+              example: 45
+            approvedCount:
+              type: integer
+              example: 32
+            rejectedCount:
+              type: integer
+              example: 8
+            pendingCount:
+              type: integer
+              example: 5
+
+    CreateEventRequest:
+      type: object
+      required: [name, date, church]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Culte du 19 janvier
+        date:
+          type: string
+          format: date-time
+          example: "2025-01-19T10:00:00Z"
+        church:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: ICC Rennes
+        description:
+          type: string
+          maxLength: 1000
+          example: Culte dominical
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        date:
+          type: string
+          format: date-time
+        church:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        status:
+          $ref: '#/components/schemas/EventStatus'
+
+    # === PHOTO ===
+    Photo:
+      type: object
+      required: [id, filename, thumbnailUrl, status, uploadedAt]
+      properties:
+        id:
+          type: string
+          format: cuid
+          example: clx0987654321fedcba
+        filename:
+          type: string
+          example: IMG_4523.jpg
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: https://s3.gra.io.cloud.ovh.net/picflow/events/.../thumb.webp?signature=...
+        status:
+          $ref: '#/components/schemas/PhotoStatus'
+        width:
+          type: integer
+          nullable: true
+          example: 4000
+        height:
+          type: integer
+          nullable: true
+          example: 3000
+        uploadedAt:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PhotoWithOriginalUrl:
+      allOf:
+        - $ref: '#/components/schemas/Photo'
+        - type: object
+          required: [originalUrl]
+          properties:
+            originalUrl:
+              type: string
+              format: uri
+              description: URL signée vers la photo originale HD (expire après 5 min)
+
+    UploadResponse:
+      type: object
+      required: [uploaded, errors]
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: object
+            required: [id, filename, thumbnailUrl]
+            properties:
+              id:
+                type: string
+                format: cuid
+              filename:
+                type: string
+              thumbnailUrl:
+                type: string
+                format: uri
+        errors:
+          type: array
+          items:
+            type: object
+            required: [filename, error]
+            properties:
+              filename:
+                type: string
+              error:
+                type: string
+
+    # === SHARE TOKEN ===
+    CreateShareTokenRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          $ref: '#/components/schemas/TokenType'
+        label:
+          type: string
+          maxLength: 255
+          example: Pasteur Martin
+          description: Label pour identifier le destinataire
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+          example: 7
+          description: Durée de validité en jours (null = pas d'expiration)
+
+    ShareTokenResponse:
+      type: object
+      required: [token, url, type]
+      properties:
+        token:
+          type: string
+          minLength: 64
+          maxLength: 64
+          example: a1b2c3d4e5f6...
+        url:
+          type: string
+          format: uri
+          example: https://picflow.example.com/v/a1b2c3d4e5f6...
+          description: URL complète à partager
+        type:
+          $ref: '#/components/schemas/TokenType'
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    # === VALIDATION ===
+    ValidationEventResponse:
+      type: object
+      required: [event, photos, stats]
+      properties:
+        event:
+          type: object
+          required: [id, name, date, church]
+          properties:
+            id:
+              type: string
+              format: cuid
+            name:
+              type: string
+            date:
+              type: string
+              format: date-time
+            church:
+              type: string
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        stats:
+          type: object
+          required: [total, pending, approved, rejected]
+          properties:
+            total:
+              type: integer
+            pending:
+              type: integer
+            approved:
+              type: integer
+            rejected:
+              type: integer
+
+    SubmitValidationRequest:
+      type: object
+      required: [decisions]
+      properties:
+        decisions:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [photoId, status]
+            properties:
+              photoId:
+                type: string
+                format: cuid
+              status:
+                type: string
+                enum: [APPROVED, REJECTED]
+
+    ValidationResult:
+      type: object
+      required: [updated, stats]
+      properties:
+        updated:
+          type: integer
+          description: Nombre de photos mises à jour
+        stats:
+          type: object
+          required: [total, approved, rejected]
+          properties:
+            total:
+              type: integer
+            approved:
+              type: integer
+            rejected:
+              type: integer
+
+    # === DOWNLOAD ===
+    ZipJobResponse:
+      type: object
+      required: [jobId, statusUrl]
+      properties:
+        jobId:
+          type: string
+          format: cuid
+        statusUrl:
+          type: string
+          format: uri
+
+    ZipStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PROCESSING, READY, ERROR]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        downloadUrl:
+          type: string
+          format: uri
+          description: URL signée du ZIP (présent si status=READY)
+        expiresAt:
+          type: string
+          format: date-time
+        error:
+          type: string
+          description: Message d'erreur (présent si status=ERROR)
+
+paths:
+  # ============================================
+  # EVENTS
+  # ============================================
+  /api/events:
+    get:
+      tags: [Events]
+      summary: Lister les événements
+      description: Retourne la liste paginée des événements avec statistiques
+      operationId: listEvents
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EventStatus'
+        - name: church
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Date de début (incluse)
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Date de fin (incluse)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Liste des événements
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, pagination]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventWithStats'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [Events]
+      summary: Créer un événement
+      operationId: createEvent
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Événement créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/events/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    get:
+      tags: [Events]
+      summary: Récupérer un événement
+      operationId: getEvent
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Détail de l'événement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventWithStats'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags: [Events]
+      summary: Modifier un événement
+      operationId: updateEvent
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Événement mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Events]
+      summary: Supprimer un événement
+      description: Supprime l'événement et toutes ses photos associées
+      operationId: deleteEvent
+      security:
+        - sessionAuth: []
+      responses:
+        '204':
+          description: Événement supprimé
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/events/{id}/share:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    post:
+      tags: [Events]
+      summary: Générer un lien de partage
+      description: Crée un token de partage pour validation ou téléchargement
+      operationId: createShareToken
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareTokenRequest'
+      responses:
+        '201':
+          description: Token créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareTokenResponse'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags: [Events]
+      summary: Lister les tokens de partage
+      operationId: listShareTokens
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Liste des tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/ShareTokenResponse'
+                        - type: object
+                          properties:
+                            label:
+                              type: string
+                            lastUsedAt:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            usageCount:
+                              type: integer
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================
+  # PHOTOS
+  # ============================================
+  /api/photos/upload:
+    post:
+      tags: [Photos]
+      summary: Uploader des photos
+      description: |
+        Upload multiple de photos pour un événement.
+        - Formats acceptés : JPEG, PNG, WebP, HEIC
+        - Taille max par fichier : 50 Mo
+        - Les miniatures sont générées automatiquement
+      operationId: uploadPhotos
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [eventId, files]
+              properties:
+                eventId:
+                  type: string
+                  format: cuid
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Résultat de l'upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Fichiers invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/photos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    delete:
+      tags: [Photos]
+      summary: Supprimer une photo
+      operationId: deletePhoto
+      security:
+        - sessionAuth: []
+      responses:
+        '204':
+          description: Photo supprimée
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Photo non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/photos/{id}/url:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    get:
+      tags: [Photos]
+      summary: Obtenir l'URL de téléchargement
+      description: Retourne une URL signée pour télécharger la photo originale HD
+      operationId: getPhotoUrl
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: URL signée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, expiresAt]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Photo non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================
+  # VALIDATION (Token)
+  # ============================================
+  /api/validate/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 64
+          maxLength: 64
+
+    get:
+      tags: [Validation]
+      summary: Récupérer l'événement à valider
+      description: Retourne l'événement et ses photos pour validation
+      operationId: getValidationEvent
+      responses:
+        '200':
+          description: Événement avec photos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationEventResponse'
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags: [Validation]
+      summary: Soumettre les validations
+      description: Enregistre les décisions de validation (approuvé/rejeté)
+      operationId: submitValidation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitValidationRequest'
+      responses:
+        '200':
+          description: Validations enregistrées
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Token de type MEDIA (pas de droit de validation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/validate/{token}/photo/{photoId}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: photoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    get:
+      tags: [Validation]
+      summary: Obtenir l'URL HD d'une photo
+      description: Retourne une URL signée pour voir la photo en haute définition
+      operationId: getValidationPhotoUrl
+      responses:
+        '200':
+          description: URL signée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, expiresAt]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Photo non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================
+  # DOWNLOAD (Token MEDIA ou Admin)
+  # ============================================
+  /api/download/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Download]
+      summary: Lister les photos validées
+      description: Retourne uniquement les photos approuvées pour téléchargement
+      operationId: listDownloadablePhotos
+      responses:
+        '200':
+          description: Photos validées
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event, photos]
+                properties:
+                  event:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      date:
+                        type: string
+                        format: date-time
+                      church:
+                        type: string
+                  photos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Photo'
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/download/{token}/photo/{photoId}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: photoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    get:
+      tags: [Download]
+      summary: Télécharger une photo
+      description: Retourne l'URL signée pour télécharger la photo HD
+      operationId: downloadPhoto
+      responses:
+        '200':
+          description: URL de téléchargement
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, expiresAt, filename]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  filename:
+                    type: string
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Photo non validée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Photo non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/download/{token}/zip:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags: [Download]
+      summary: Générer un ZIP des photos
+      description: |
+        Lance la génération d'un ZIP contenant les photos sélectionnées.
+        Le traitement est asynchrone pour les gros volumes.
+      operationId: createZip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photoIds:
+                  type: array
+                  items:
+                    type: string
+                    format: cuid
+                  description: IDs des photos à inclure (vide = toutes les validées)
+      responses:
+        '202':
+          description: Génération en cours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZipJobResponse'
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/download/{token}/zip/{jobId}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: cuid
+
+    get:
+      tags: [Download]
+      summary: Statut de génération du ZIP
+      description: Vérifie l'avancement et récupère l'URL de téléchargement
+      operationId: getZipStatus
+      responses:
+        '200':
+          description: Statut du job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZipStatusResponse'
+        '401':
+          description: Token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

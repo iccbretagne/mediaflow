@@ -1,0 +1,219 @@
+// PicFlow - Photo Validation Workflow
+// Database: MySQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// UTILISATEURS
+// ============================================
+
+enum UserRole {
+  ADMIN // Équipe photo - peut tout faire
+  MEDIA // Équipe média - téléchargement uniquement
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?   @db.Text
+  role          UserRole  @default(ADMIN)
+  emailVerified DateTime?
+
+  // Relations
+  events   Event[]   @relation("EventCreator")
+  accounts Account[]
+  sessions Session[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// ============================================
+// ÉVÉNEMENTS
+// ============================================
+
+enum EventStatus {
+  DRAFT          // En cours d'upload
+  PENDING_REVIEW // En attente de validation
+  REVIEWED       // Validation terminée
+  ARCHIVED       // Archivé
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  name        String      @db.VarChar(255)
+  date        DateTime
+  church      String      @db.VarChar(255)
+  description String?     @db.Text
+  status      EventStatus @default(DRAFT)
+
+  // Relations
+  createdById String
+  createdBy   User         @relation("EventCreator", fields: [createdById], references: [id])
+  photos      Photo[]
+  shareTokens ShareToken[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdById])
+  @@index([status])
+  @@index([date])
+}
+
+// ============================================
+// PHOTOS
+// ============================================
+
+enum PhotoStatus {
+  PENDING  // En attente de validation
+  APPROVED // Validée
+  REJECTED // Rejetée
+}
+
+model Photo {
+  id           String      @id @default(cuid())
+  filename     String      @db.VarChar(255)
+  originalKey  String      @db.VarChar(512) // Clé S3 photo originale
+  thumbnailKey String      @db.VarChar(512) // Clé S3 miniature
+  mimeType     String      @db.VarChar(100)
+  size         Int // Taille en bytes
+  width        Int? // Dimensions originales
+  height       Int?
+
+  // Validation
+  status      PhotoStatus @default(PENDING)
+  validatedAt DateTime?
+  validatedBy String?     @db.VarChar(255) // Nom ou identifiant du validateur
+
+  // Relations
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  uploadedAt DateTime @default(now())
+
+  @@index([eventId])
+  @@index([status])
+  @@index([eventId, status])
+}
+
+// ============================================
+// TOKENS DE PARTAGE
+// ============================================
+
+enum TokenType {
+  VALIDATOR // Accès validation (lecture + modification status)
+  MEDIA     // Accès téléchargement (lecture photos validées uniquement)
+}
+
+model ShareToken {
+  id    String    @id @default(cuid())
+  token String    @unique @db.VarChar(64)
+  type  TokenType
+  label String?   @db.VarChar(255) // Ex: "Pasteur Martin"
+
+  // Expiration
+  expiresAt DateTime?
+
+  // Utilisation
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+
+  // Relations
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([eventId])
+}
+
+// ============================================
+// JOBS (pour génération ZIP async)
+// ============================================
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ZipJob {
+  id       String    @id @default(cuid())
+  status   JobStatus @default(PENDING)
+  progress Int       @default(0) // 0-100
+
+  // Résultat
+  downloadKey String?   @db.VarChar(512) // Clé S3 du ZIP
+  expiresAt   DateTime?
+  error       String?   @db.Text
+
+  // Context
+  eventId  String
+  photoIds Json // Array des IDs de photos à inclure
+  tokenId  String // Token utilisé pour la demande
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+}
+
+// ============================================
+// NEXTAUTH (tables requises)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

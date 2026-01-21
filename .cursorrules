@@ -1,0 +1,17 @@
+# PicFlow - Contexte Cursor AI
+
+Voir [CLAUDE.md](./CLAUDE.md) pour le contexte complet du projet.
+
+## Résumé rapide
+
+- **Projet** : PWA de validation de photos pour églises
+- **Stack** : Next.js 14+, MySQL/Prisma, NextAuth, OVH S3, Tailwind
+- **Source de vérité** : Schémas Zod dans `src/lib/schemas/`
+
+## Fichiers clés
+
+- `CLAUDE.md` - Contexte IA complet
+- `docs/EXPRESSION_BESOIN.md` - Besoin métier
+- `docs/CONCEPTION_TECHNIQUE.md` - Architecture
+- `docs/openapi.yaml` - Spec API
+- `prisma/schema.prisma` - Modèle BDD
