@@ -26,15 +26,20 @@ Ce fichier fournit le contexte nécessaire pour qu'un agent IA puisse comprendre
 
 ## Stack technique
 
-| Composant | Technologie |
-|-----------|-------------|
-| Framework | Next.js 14+ (App Router) |
-| BDD | MySQL + Prisma ORM |
-| Auth | NextAuth.js v5 (Google OAuth) |
-| Stockage | OVH Object Storage (S3-compatible) |
-| Validation | Zod + zod-to-openapi |
-| Styling | Tailwind CSS |
-| Images | Sharp (thumbnails) |
+| Composant | Technologie | Version |
+|-----------|-------------|---------|
+| Framework | Next.js (App Router) | 16.1.4 |
+| Runtime | React | 19.2.3 |
+| BDD | MySQL + Prisma ORM | Prisma 7.3.0 |
+| Adapter BDD | @prisma/adapter-mariadb | 7.3.0 |
+| Auth | NextAuth.js v5 beta | 5.0.0-beta.30 |
+| Stockage | AWS SDK S3 (OVH compatible) | 3.972.0 |
+| Validation | Zod + zod-to-openapi | Zod 4.3.5, openapi 8.4.0 |
+| Styling | Tailwind CSS | 4.x |
+| Images | Sharp | 0.34.5 |
+| State | Zustand | 5.0.10 |
+
+**Note importante :** Prisma 7+ utilise des adaptateurs de base de données (drivers adapters). Pour MySQL/MariaDB, utiliser `@prisma/adapter-mariadb` avec le package `mariadb`. Le `datasource` dans `schema.prisma` ne doit PAS contenir d'URL - la connexion est configurée dans `src/lib/prisma.ts`.
 
 ## Structure du projet
 
@@ -87,6 +92,33 @@ Spec OpenAPI complète : `docs/openapi.yaml`
 2. **Mobile-first** : L'interface de validation doit être ultra-simple sur mobile
 3. **Sécurité** : Validation Zod sur toutes les entrées, tokens sécurisés
 4. **Maintenabilité** : Architecture simple, peu de dépendances
+
+## Règles pour les agents IA
+
+### Lecture de documentation obligatoire
+
+**AVANT toute implémentation utilisant une librairie externe :**
+
+1. **Vérifier la version** utilisée dans `package.json`
+2. **Lire la documentation officielle** pour cette version spécifique
+3. **Attention aux breaking changes** entre versions majeures (ex: Prisma 6 → 7, Zod 3 → 4)
+
+### Liens de documentation par version
+
+| Librairie | Doc officielle |
+|-----------|---------------|
+| Prisma 7.x | https://www.prisma.io/docs |
+| Next.js 16.x | https://nextjs.org/docs |
+| NextAuth v5 | https://authjs.dev/getting-started |
+| Zod 4.x | https://zod.dev |
+| AWS SDK v3 | https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/ |
+
+### Points d'attention spécifiques
+
+- **Prisma 7** : Plus de `url` dans `datasource`, utiliser les driver adapters
+- **NextAuth v5** : API différente de v4, utiliser `auth()` au lieu de `getServerSession()`
+- **Zod 4** : Nouvelles méthodes, breaking changes depuis v3
+- **Next.js 16** : App Router uniquement, nouvelles conventions
 
 ## Conventions de code
 
