@@ -30,7 +30,7 @@ export default function DownloadPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState<Set<string>>(new Set())
-  const [downloadingAll, setDownloadingAll] = useState(false)
+  const [downloadingZip, setDownloadingZip] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -88,31 +88,22 @@ export default function DownloadPage() {
     }
   }
 
-  async function downloadAll() {
+  function downloadZip() {
     if (!data || data.photos.length === 0) return
 
-    setDownloadingAll(true)
+    setDownloadingZip(true)
 
-    let successCount = 0
-    let errorCount = 0
+    // Trigger ZIP download via iframe
+    const iframe = document.createElement("iframe")
+    iframe.style.display = "none"
+    iframe.src = `/api/download/${token}/zip`
+    document.body.appendChild(iframe)
 
-    // Download photos sequentially with longer delay
-    for (const photo of data.photos) {
-      const success = await downloadPhoto(photo.id, photo.filename)
-      if (success) {
-        successCount++
-      } else {
-        errorCount++
-      }
-      // Longer delay between downloads for browser to process
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-    }
-
-    setDownloadingAll(false)
-
-    if (errorCount > 0) {
-      alert(`${successCount} téléchargée(s), ${errorCount} erreur(s)`)
-    }
+    // Clean up and reset state after download starts
+    setTimeout(() => {
+      document.body.removeChild(iframe)
+      setDownloadingZip(false)
+    }, 5000)
   }
 
   // Loading state
@@ -228,9 +219,9 @@ export default function DownloadPage() {
                 {data.photos.length} photo{data.photos.length > 1 ? "s" : ""} disponible{data.photos.length > 1 ? "s" : ""}
               </span>
               <Button
-                onClick={downloadAll}
-                loading={downloadingAll}
-                disabled={downloadingAll}
+                onClick={downloadZip}
+                loading={downloadingZip}
+                disabled={downloadingZip}
               >
                 <svg
                   className="w-5 h-5 mr-2"
@@ -245,7 +236,7 @@ export default function DownloadPage() {
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                   />
                 </svg>
-                Tout télécharger
+                Télécharger ZIP
               </Button>
             </div>
           </div>
