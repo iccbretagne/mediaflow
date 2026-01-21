@@ -153,19 +153,19 @@ Toutes les réponses API suivent un format standardisé :
 
 ### Implémenté ✅
 - Schéma Prisma complet + migrations
-- Toutes les routes API
+- Toutes les routes API (format standardisé `{ data }`)
 - Auth Google (NextAuth)
 - Page de login
 - Page de validation mobile (swipe + grid)
+- Page de téléchargement pour l'équipe média (`/d/[token]`)
 - Utilitaires S3, Sharp, tokens
 - Page dashboard admin (liste événements)
 - Page création événement
-- Page détail événement (upload + gestion)
+- Page détail événement (upload + gestion + suppression)
 - Page gestion des tokens de partage
-- Composants PhotoUploader et PhotoGrid
+- Composants: PhotoUploader, PhotoGrid, ConfirmModal, EventActions
 
 ### À compléter 🚧
-- Page de téléchargement pour l'équipe média (`/d/[token]`)
 - Tests unitaires et e2e
 - PWA service worker (offline)
 - Notifications email
