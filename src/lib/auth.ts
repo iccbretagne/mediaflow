@@ -9,6 +9,11 @@ import type { NextRequest } from "next/server"
 // NEXTAUTH CONFIGURATION
 // ============================================
 
+// Super admin emails from env
+const SUPER_ADMIN_EMAILS = process.env.SUPER_ADMIN_EMAILS?.split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean) || []
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -18,17 +23,54 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Auto-approve super admins
+      if (user.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        })
+
+        if (existingUser) {
+          // Update existing super admin to ACTIVE if not already
+          if (existingUser.status !== "ACTIVE") {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { status: "ACTIVE", role: "ADMIN" },
+            })
+          }
+        }
+        // For new users, the adapter will create them as PENDING,
+        // but we'll update them in the session callback
+      }
+      return true
+    },
     async session({ session, user }) {
       // Add user id, role, and status to session
       if (session.user) {
         session.user.id = user.id
+
+        // Check if user is a super admin and auto-activate
+        const isSuperAdmin = session.user.email &&
+          SUPER_ADMIN_EMAILS.includes(session.user.email.toLowerCase())
+
         // Fetch user role and status
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { role: true, status: true },
         })
-        session.user.role = dbUser?.role || "ADMIN"
-        session.user.status = dbUser?.status || "PENDING"
+
+        // Auto-activate super admins
+        if (isSuperAdmin && dbUser?.status !== "ACTIVE") {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { status: "ACTIVE", role: "ADMIN" },
+          })
+          session.user.role = "ADMIN"
+          session.user.status = "ACTIVE"
+        } else {
+          session.user.role = dbUser?.role || "ADMIN"
+          session.user.status = dbUser?.status || "PENDING"
+        }
       }
       return session
     },
