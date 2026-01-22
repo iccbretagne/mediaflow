@@ -38,9 +38,11 @@ Assure-toi que `DATABASE_URL` pointe vers la base de production.
 
 ```bash
 npm install
-npm run build
+npm run build  # Génère automatiquement le client Prisma puis build Next.js
 npm run start
 ```
+
+**Note :** Le script `build` dans `package.json` exécute automatiquement `prisma generate` avant `next build`. Si vous buildez manuellement avec `next build`, pensez à exécuter `npx prisma generate` d'abord.
 
 Lancement avec `NODE_ENV=production` (Next.js le gere automatiquement au build).
 
@@ -102,9 +104,11 @@ Verifier :
 ## 7) Checklist de mise en prod
 
 - [ ] Variables d'environnement configurees
-- [ ] Migrations appliquees
+- [ ] Migrations appliquees (`npx prisma migrate deploy`)
+- [ ] Client Prisma genere (`npx prisma generate`)
 - [ ] OAuth Google configure
 - [ ] Bucket S3 fonctionnel
+- [ ] Build reussi (`npm run build`)
 - [ ] Login Google OK
 - [ ] Upload OK
 - [ ] Validation OK
