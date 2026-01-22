@@ -28,13 +28,7 @@ export default async function DashboardPage() {
     redirect("/")
   }
 
-  type EventWithPhotos = PrismaClient["event"]["findMany"] extends (
-    ...args: any[]
-  ) => Promise<infer R>
-    ? R[number]
-    : never
-    include: { _count: { select: { photos: true } }; photos: { select: { status: true } } }
-  }>
+  type EventWithPhotos = Awaited<ReturnType<typeof prisma.event.findMany>>[number]
 
   const events: EventWithPhotos[] = await prisma.event.findMany({
     where: { createdById: session.user.id },
