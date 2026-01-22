@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, Button } from "@/components/ui"
-import type { PrismaClient } from "@prisma/client"
 
 type EventStatus = "DRAFT" | "PENDING_REVIEW" | "REVIEWED" | "ARCHIVED"
 
