@@ -16,13 +16,43 @@ Les variables sont dans `.env.example`. Points importants en production :
 - `APP_URL` : URL publique (utilisee pour generer les liens de partage)
 - `NEXTAUTH_URL` : URL publique (NextAuth)
 - `NEXTAUTH_SECRET` : secret fort (obligatoire)
+- `AUTH_TRUST_HOST` : `true` si vous etes derriere un proxy/ingress
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+- `SUPER_ADMIN_EMAILS` : emails auto-approves, separes par des virgules
 - `S3_*` : credentials OVH
 
 Base de donnees :
 
 - **Migrations (Prisma)** : utilise `DATABASE_URL`
 - **Runtime** : utilise `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (`src/lib/prisma.ts`)
+
+### Liste exhaustive des variables
+
+Database :
+- `DATABASE_URL`
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+
+Auth :
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
+- `AUTH_TRUST_HOST`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `SUPER_ADMIN_EMAILS`
+
+Stockage :
+- `S3_ENDPOINT`
+- `S3_REGION`
+- `S3_BUCKET`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+
+App :
+- `APP_URL`
 
 ## 3) Migrations
 

@@ -11,6 +11,7 @@ Ce document synthétise ce qui est **effectivement présent dans le code** et co
 ### Résumé rapide
 - **MVP globalement fonctionnel** : auth, events, upload, partage, validation, download, API.
 - **Écarts clés** : Swagger UI absente, nombre de routes API sous‑estimé, formats upload pas alignés.
+- **UI** : charte ICC appliquée aux pages auth + nouveaux composants Input/Select/Textarea/Badge.
 
 ### Tableau comparatif
 
