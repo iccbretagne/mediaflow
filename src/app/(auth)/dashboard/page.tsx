@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, Button } from "@/components/ui"
-import type { Prisma } from "@prisma/client"
+import type { PrismaClient } from "@prisma/client"
 
 type EventStatus = "DRAFT" | "PENDING_REVIEW" | "REVIEWED" | "ARCHIVED"
 
@@ -28,7 +28,11 @@ export default async function DashboardPage() {
     redirect("/")
   }
 
-  type EventWithPhotos = Prisma.EventGetPayload<{
+  type EventWithPhotos = PrismaClient["event"]["findMany"] extends (
+    ...args: any[]
+  ) => Promise<infer R>
+    ? R[number]
+    : never
     include: { _count: { select: { photos: true } }; photos: { select: { status: true } } }
   }>
 
