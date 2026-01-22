@@ -17,7 +17,7 @@ Photo validation workflow PWA for church media teams.
 - **Auth**: NextAuth.js (Google OAuth)
 - **Storage**: OVH Object Storage (S3-compatible)
 - **Styling**: Tailwind CSS
-- **Validation**: Zod + OpenAPI
+- **Validation**: Zod + OpenAPI (spec générée depuis Zod côté Next.js)
 
 ## Getting Started
 
@@ -66,7 +66,7 @@ See `.env.example` for all required variables:
 
 - [Expression de Besoin](./docs/EXPRESSION_BESOIN.md)
 - [Conception Technique](./docs/CONCEPTION_TECHNIQUE.md)
-- [OpenAPI Spec](./docs/openapi.yaml)
+- [OpenAPI Spec](./docs/openapi.yaml) (snapshot, générée depuis Zod)
 - [Mise en production](./docs/PRODUCTION.md)
 - [Etat des lieux](./docs/STATUS.md)
 - API Documentation: `/docs` (Swagger UI)

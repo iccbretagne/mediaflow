@@ -263,8 +263,8 @@ L'API suit une approche **schema-first** avec Zod comme source de vérité :
 **Dépendances clés :**
 ```json
 {
-  "zod": "^3.23.x",
-  "@asteasolutions/zod-to-openapi": "^7.x",
+  "zod": "^4.3.x",
+  "@asteasolutions/zod-to-openapi": "^8.4.x",
   "swagger-ui-react": "^5.x"
 }
 ```
@@ -458,6 +458,8 @@ export const ValidationResultSchema = z.object({
 ```
 
 ### 2.3 Génération OpenAPI
+
+La spec OpenAPI est **générée depuis les schémas Zod** (côté Next.js). Elle est exposée via `GET /api/docs` (JSON). Le fichier `docs/openapi.yaml` est un snapshot utile pour la lecture hors‑ligne.
 
 ```typescript
 // src/lib/openapi.ts
