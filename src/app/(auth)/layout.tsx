@@ -15,6 +15,51 @@ export default async function AuthLayout({
     redirect("/")
   }
 
+  // Check user status
+  if (session.user.status !== "ACTIVE") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-yellow-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {session.user.status === "PENDING"
+              ? "Compte en attente d'approbation"
+              : "Accès refusé"}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {session.user.status === "PENDING"
+              ? "Votre compte est en attente d'approbation par un administrateur. Vous recevrez un email lorsque votre compte sera activé."
+              : "Votre compte a été rejeté. Veuillez contacter un administrateur pour plus d'informations."}
+          </p>
+          <form
+            action={async () => {
+              "use server"
+              await signOut({ redirectTo: "/" })
+            }}
+          >
+            <Button type="submit" variant="primary" className="w-full">
+              Se déconnecter
+            </Button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -26,6 +71,18 @@ export default async function AuthLayout({
 
             {/* Navigation */}
             <div className="flex items-center gap-6">
+              <Link
+                href="/churches"
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Églises
+              </Link>
+              <Link
+                href="/users"
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Utilisateurs
+              </Link>
               <Link
                 href="/settings"
                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors"

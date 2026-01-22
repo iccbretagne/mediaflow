@@ -22,6 +22,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const event = await prisma.event.findUnique({
       where: { id, createdById: user.id },
       include: {
+        church: {
+          select: { name: true },
+        },
         photos: {
           select: { status: true },
         },
@@ -40,7 +43,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: event.id,
       name: event.name,
       date: event.date.toISOString(),
-      church: event.church,
+      churchId: event.churchId,
+      church: event.church.name,
       description: event.description,
       status: event.status,
       createdAt: event.createdAt.toISOString(),
@@ -75,9 +79,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       data: {
         ...(body.name && { name: body.name }),
         ...(body.date && { date: new Date(body.date) }),
-        ...(body.church && { church: body.church }),
+        ...(body.churchId && { churchId: body.churchId }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.status && { status: body.status }),
+      },
+      include: {
+        church: {
+          select: { name: true },
+        },
       },
     })
 
@@ -85,7 +94,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       id: event.id,
       name: event.name,
       date: event.date.toISOString(),
-      church: event.church,
+      churchId: event.churchId,
+      church: event.church.name,
       description: event.description,
       status: event.status,
       createdAt: event.createdAt.toISOString(),

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const where = {
       createdById: user.id,
       ...(query.status && { status: query.status }),
-      ...(query.church && { church: query.church }),
+      ...(query.churchId && { churchId: query.churchId }),
       ...(query.from || query.to
         ? {
             date: {
@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
         take,
         orderBy: { date: "desc" },
         include: {
+          church: {
+            select: { name: true },
+          },
           _count: {
             select: { photos: true },
           },
@@ -61,7 +64,8 @@ export async function GET(request: NextRequest) {
         id: event.id,
         name: event.name,
         date: event.date.toISOString(),
-        church: event.church,
+        churchId: event.churchId,
+        church: event.church.name,
         description: event.description,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
@@ -89,9 +93,14 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name,
         date: new Date(body.date),
-        church: body.church,
+        churchId: body.churchId,
         description: body.description,
         createdById: user.id,
+      },
+      include: {
+        church: {
+          select: { name: true },
+        },
       },
     })
 
@@ -100,7 +109,8 @@ export async function POST(request: NextRequest) {
         id: event.id,
         name: event.name,
         date: event.date.toISOString(),
-        church: event.church,
+        churchId: event.churchId,
+        church: event.church.name,
         description: event.description,
         status: event.status,
         createdAt: event.createdAt.toISOString(),

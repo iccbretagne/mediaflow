@@ -5,7 +5,9 @@
 // - OpenAPI spec generation
 
 export * from "./common"
+export * from "./church"
 export * from "./event"
 export * from "./photo"
+export * from "./user"
 export * from "./validation"
 export * from "./settings"

@@ -19,7 +19,7 @@ export const CreateEventSchema = z
   .object({
     name: z.string().min(1).max(255).openapi({ example: "Culte du 19 janvier" }),
     date: z.string().datetime().openapi({ example: "2025-01-19T10:00:00Z" }),
-    church: z.string().min(1).max(255).openapi({ example: "ICC Rennes" }),
+    churchId: z.string().cuid().openapi({ example: "clxxx..." }),
     description: z
       .string()
       .max(1000)
@@ -37,7 +37,7 @@ export const UpdateEventSchema = CreateEventSchema.partial()
 export const ListEventsQuerySchema = z
   .object({
     status: EventStatusEnum.optional(),
-    church: z.string().optional(),
+    churchId: z.string().cuid().optional(),
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),
   })
@@ -49,7 +49,8 @@ export const EventSchema = z
     id: z.string().cuid(),
     name: z.string(),
     date: z.string().datetime(),
-    church: z.string(),
+    churchId: z.string().cuid(),
+    church: z.string(), // Nom de l'église (pour affichage)
     description: z.string().nullable(),
     status: EventStatusEnum,
     createdAt: z.string().datetime(),

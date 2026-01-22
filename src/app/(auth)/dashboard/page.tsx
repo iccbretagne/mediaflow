@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, Button } from "@/components/ui"
+import { DashboardFilters } from "@/components/dashboard/DashboardFilters"
 
 type EventStatus = "DRAFT" | "PENDING_REVIEW" | "REVIEWED" | "ARCHIVED"
 
@@ -20,12 +21,19 @@ const statusColors: Record<EventStatus, string> = {
   ARCHIVED: "bg-blue-100 text-blue-700",
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ churchId?: string; status?: string }>
+}) {
   const session = await auth()
 
   if (!session?.user) {
     redirect("/")
   }
+
+  const params = await searchParams
+  const { churchId, status } = params
 
   type EventWithPhotos = {
     id: string
@@ -33,7 +41,10 @@ export default async function DashboardPage() {
     createdAt: Date
     updatedAt: Date
     date: Date
-    church: string
+    churchId: string
+    church: {
+      name: string
+    }
     description: string | null
     status: EventStatus
     createdById: string
@@ -42,9 +53,16 @@ export default async function DashboardPage() {
   }
 
   const events = (await prisma.event.findMany({
-    where: { createdById: session.user.id },
+    where: {
+      createdById: session.user.id,
+      ...(churchId && { churchId }),
+      ...(status && { status: status as EventStatus }),
+    },
     orderBy: { date: "desc" },
     include: {
+      church: {
+        select: { name: true },
+      },
       _count: {
         select: { photos: true },
       },
@@ -53,6 +71,12 @@ export default async function DashboardPage() {
       },
     },
   })) as EventWithPhotos[]
+
+  // Fetch churches for filter dropdown
+  const churches = await prisma.church.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  })
 
   const eventsWithStats = events.map((event) => ({
     ...event,
@@ -90,6 +114,9 @@ export default async function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Filters */}
+      <DashboardFilters churches={churches} />
 
       {/* Events list */}
       {eventsWithStats.length === 0 ? (
@@ -143,7 +170,7 @@ export default async function DashboardPage() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {event.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">{event.church}</p>
+                  <p className="text-sm text-gray-600 mb-3">{event.church.name}</p>
                   <p className="text-sm text-gray-500">
                     {new Date(event.date).toLocaleDateString("fr-FR", {
                       weekday: "long",

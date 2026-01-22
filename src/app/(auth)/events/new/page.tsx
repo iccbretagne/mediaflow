@@ -1,14 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, Button } from "@/components/ui"
+import type { ChurchResponse } from "@/lib/schemas"
 
 export default function NewEventPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [churches, setChurches] = useState<ChurchResponse[]>([])
+  const [loadingChurches, setLoadingChurches] = useState(true)
+
+  useEffect(() => {
+    fetchChurches()
+  }, [])
+
+  async function fetchChurches() {
+    try {
+      const res = await fetch("/api/churches")
+      const data = await res.json()
+      setChurches(data.data || [])
+    } catch (err) {
+      console.error("Erreur lors du chargement des églises:", err)
+    } finally {
+      setLoadingChurches(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -19,7 +38,7 @@ export default function NewEventPage() {
     const data = {
       name: formData.get("name") as string,
       date: new Date(formData.get("date") as string).toISOString(),
-      church: formData.get("church") as string,
+      churchId: formData.get("churchId") as string,
       description: (formData.get("description") as string) || undefined,
     }
 
@@ -124,20 +143,41 @@ export default function NewEventPage() {
             {/* Church */}
             <div>
               <label
-                htmlFor="church"
+                htmlFor="churchId"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Église *
               </label>
-              <input
-                type="text"
-                id="church"
-                name="church"
-                required
-                maxLength={255}
-                placeholder="Ex: ICC Rennes"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              {loadingChurches ? (
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Chargement...
+                </div>
+              ) : churches.length === 0 ? (
+                <div className="space-y-2">
+                  <div className="w-full px-4 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-yellow-700 text-sm">
+                    Aucune église disponible. Créez-en une d'abord.
+                  </div>
+                  <Link href="/churches">
+                    <Button type="button" variant="secondary" className="w-full">
+                      Gérer les églises
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <select
+                  id="churchId"
+                  name="churchId"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">Sélectionnez une église</option>
+                  {churches.map((church) => (
+                    <option key={church.id} value={church.id}>
+                      {church.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Description */}

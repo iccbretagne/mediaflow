@@ -15,7 +15,10 @@ type EventWithRelations = {
   id: string
   name: string
   date: Date
-  church: string
+  churchId: string
+  church: {
+    name: string
+  }
   description: string | null
   status: EventStatus
   photos: {
@@ -64,6 +67,9 @@ export default async function EventDetailPage({
   const event = (await prisma.event.findUnique({
     where: { id, createdById: session.user.id },
     include: {
+      church: {
+        select: { name: true },
+      },
       photos: {
         orderBy: { uploadedAt: "desc" },
       },
@@ -126,7 +132,7 @@ export default async function EventDetailPage({
               {statusLabels[event.status as EventStatus]}
             </span>
           </div>
-          <p className="text-gray-600">{event.church}</p>
+          <p className="text-gray-600">{event.church.name}</p>
           <p className="text-sm text-gray-500 mt-1">
             {new Date(event.date).toLocaleDateString("fr-FR", {
               weekday: "long",

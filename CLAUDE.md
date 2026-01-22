@@ -156,7 +156,7 @@ Toutes les réponses API suivent un format standardisé :
 - Toutes les routes API (format standardisé `{ data }`)
 - Auth Google (NextAuth)
 - Page de login
-- Page de validation mobile (swipe + grid)
+- Page de validation mobile (swipe + grid + safe areas)
 - Page de téléchargement pour l'équipe média (`/d/[token]`)
 - Utilitaires S3, Sharp, tokens
 - Page dashboard admin (liste événements)
@@ -164,11 +164,22 @@ Toutes les réponses API suivent un format standardisé :
 - Page détail événement (upload + gestion + suppression)
 - Page gestion des tokens de partage
 - Composants: PhotoUploader, PhotoGrid, ConfirmModal, EventActions
+- **Personnalisation** : Logo et favicon uploadables via interface admin
+- Build automatique avec génération Prisma
 
 ### À compléter 🚧
+
+#### Fonctionnalités métier
+- **Gestion des églises** : CRUD églises via interface admin + sélection dans création événement + filtre dashboard
+- **Filtre événements par statut** : Filtrer DRAFT/PENDING_REVIEW/REVIEWED/ARCHIVED dans dashboard
+- **Gestion utilisateurs autorisés** : Interface admin pour approuver/refuser utilisateurs Google OAuth
+- **Charte graphique ICC Rennes** : Intégration palette couleurs + typographies (Amsterdam Four, Anton, DM Sans, Agrandir)
+
+#### Qualité & Avancé
 - Tests unitaires et e2e
 - PWA service worker (offline)
 - Notifications email
+- Documentation OpenAPI (mise à jour avec nouvelles routes settings)
 
 ## Pour démarrer
 

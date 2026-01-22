@@ -18,12 +18,19 @@ enum UserRole {
   MEDIA // Équipe média - téléchargement uniquement
 }
 
+enum UserStatus {
+  PENDING  // En attente d'approbation
+  ACTIVE   // Approuvé, peut accéder à l'app
+  REJECTED // Rejeté, ne peut pas accéder
+}
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String     @id @default(cuid())
+  email         String     @unique
   name          String?
-  image         String?   @db.Text
-  role          UserRole  @default(ADMIN)
+  image         String?    @db.Text
+  role          UserRole   @default(ADMIN)
+  status        UserStatus @default(PENDING)
   emailVerified DateTime?
 
   // Relations
@@ -36,6 +43,26 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([email])
+  @@index([status])
+}
+
+// ============================================
+// ÉGLISES
+// ============================================
+
+model Church {
+  id      String  @id @default(cuid())
+  name    String  @unique @db.VarChar(255)
+  address String? @db.VarChar(500)
+
+  // Relations
+  events Event[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
 }
 
 // ============================================
@@ -53,11 +80,12 @@ model Event {
   id          String      @id @default(cuid())
   name        String      @db.VarChar(255)
   date        DateTime
-  church      String      @db.VarChar(255)
   description String?     @db.Text
   status      EventStatus @default(DRAFT)
 
   // Relations
+  churchId    String
+  church      Church       @relation(fields: [churchId], references: [id])
   createdById String
   createdBy   User         @relation("EventCreator", fields: [createdById], references: [id])
   photos      Photo[]
@@ -68,6 +96,7 @@ model Event {
   updatedAt DateTime @updatedAt
 
   @@index([createdById])
+  @@index([churchId])
   @@index([status])
   @@index([date])
 }

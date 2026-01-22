@@ -19,15 +19,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      // Add user id and role to session
+      // Add user id, role, and status to session
       if (session.user) {
         session.user.id = user.id
-        // Fetch user role
+        // Fetch user role and status
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { role: true },
+          select: { role: true, status: true },
         })
         session.user.role = dbUser?.role || "ADMIN"
+        session.user.status = dbUser?.status || "PENDING"
       }
       return session
     },
@@ -48,6 +49,22 @@ export async function requireAuth(request?: NextRequest) {
 
   if (!session?.user) {
     throw new ApiError(401, "Authentication required", "UNAUTHORIZED")
+  }
+
+  if (session.user.status !== "ACTIVE") {
+    if (session.user.status === "PENDING") {
+      throw new ApiError(
+        403,
+        "Votre compte est en attente d'approbation par un administrateur",
+        "PENDING_APPROVAL"
+      )
+    } else if (session.user.status === "REJECTED") {
+      throw new ApiError(
+        403,
+        "Votre compte a été rejeté. Veuillez contacter un administrateur",
+        "ACCESS_DENIED"
+      )
+    }
   }
 
   return session.user
@@ -75,10 +92,12 @@ declare module "next-auth" {
       name?: string | null
       image?: string | null
       role: "ADMIN" | "MEDIA"
+      status: "PENDING" | "ACTIVE" | "REJECTED"
     }
   }
 
   interface User {
     role?: "ADMIN" | "MEDIA"
+    status?: "PENDING" | "ACTIVE" | "REJECTED"
   }
 }
