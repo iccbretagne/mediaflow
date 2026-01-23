@@ -46,24 +46,34 @@ Ce fichier fournit le contexte nécessaire pour qu'un agent IA puisse comprendre
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── api/               # Routes API REST
+│   ├── api/               # Routes API REST (18 endpoints)
 │   ├── (auth)/            # Pages admin (authentifiées)
+│   │   ├── dashboard/     # Liste événements + filtres
+│   │   ├── events/        # Création + détail événement
+│   │   ├── churches/      # CRUD églises
+│   │   ├── users/         # Gestion utilisateurs
+│   │   └── settings/      # Logo/favicon
 │   ├── (public)/          # Pages publiques (token)
-│   │   ├── v/[token]/     # Validation mobile
-│   │   └── d/[token]/     # Téléchargement
-│   └── docs/              # Swagger UI
+│   │   ├── v/[token]/     # Validation mobile (swipe)
+│   │   └── d/[token]/     # Téléchargement média
+│   └── favicon/           # Route dynamique favicon
 ├── components/            # Composants React
-│   ├── ui/               # Composants génériques
-│   ├── validation/       # Swipe, Grid, etc.
-│   └── ...
+│   ├── ui/               # Button, Card, Badge, Input, etc.
+│   ├── layout/           # AuthNav, HeaderLogo, LoginLogo
+│   ├── photos/           # PhotoGrid, PhotoUploader
+│   ├── events/           # EventActions
+│   ├── dashboard/        # DashboardFilters
+│   └── settings/         # LogoUploader, FaviconUploader
+├── design/               # Design tokens ICC
 └── lib/                   # Utilitaires
     ├── schemas/          # Schémas Zod (source de vérité)
     ├── auth.ts           # Config NextAuth
-    ├── prisma.ts         # Client Prisma
-    ├── s3.ts             # Client S3
+    ├── prisma.ts         # Client Prisma (mariadb adapter)
+    ├── s3.ts             # Client S3/OVH
     ├── sharp.ts          # Traitement images
     ├── tokens.ts         # Gestion tokens partage
-    └── api-utils.ts      # Helpers API
+    ├── api-utils.ts      # Helpers API
+    └── openapi.ts        # Génération spec OpenAPI
 ```
 
 ## Modèle de données
@@ -152,34 +162,54 @@ Toutes les réponses API suivent un format standardisé :
 ## État actuel
 
 ### Implémenté ✅
-- Schéma Prisma complet + migrations
-- Toutes les routes API (format standardisé `{ data }`)
-- Auth Google (NextAuth)
+
+#### Core métier
+- Schéma Prisma complet + 4 migrations appliquées
+- 18 routes API (format standardisé `{ data }`)
+- Auth Google (NextAuth v5)
 - Page de login
 - Page de validation mobile (swipe + grid + safe areas)
-- Page de téléchargement pour l'équipe média (`/d/[token]`)
+- Page de téléchargement pour l'équipe média (`/d/[token]`) + ZIP
 - Utilitaires S3, Sharp, tokens
-- Page dashboard admin (liste événements)
-- Page création événement
+
+#### Interface admin
+- Dashboard avec liste événements + filtres par statut
+- Page création événement (avec sélection église)
 - Page détail événement (upload + gestion + suppression)
 - Page gestion des tokens de partage
-- Composants: PhotoUploader, PhotoGrid, ConfirmModal, EventActions
-- **Personnalisation** : Logo et favicon uploadables via interface admin
+- **Gestion des églises** : CRUD complet (`/churches`)
+- **Gestion utilisateurs** : Approbation/rejet OAuth (`/users`)
+- **Personnalisation** : Logo et favicon uploadables (`/settings`)
+
+#### Composants
+- UI: Button, Card, Badge, Input, Textarea, Select, ConfirmModal
+- Photos: PhotoUploader, PhotoGrid
+- Events: EventActions, DashboardFilters
+- Layout: AuthNav, HeaderLogo, LoginLogo
+- Settings: LogoUploader, FaviconUploader
+
+#### Charte graphique ICC Rennes
+- Palette couleurs appliquée (violet `#5E17EB`, jaune `#FFEB05`, rouge `#FF3131`, bleu `#38B6FF`)
+- Typographie Montserrat intégrée
+- Design tokens dans `src/design/tokens.ts`
+
+#### Infrastructure
 - Build automatique avec génération Prisma
+- Vitest + Testing Library installés
+- Spec OpenAPI disponible (`/api/docs`)
 
 ### À compléter 🚧
 
-#### Fonctionnalités métier
-- **Gestion des églises** : CRUD églises via interface admin + sélection dans création événement + filtre dashboard
-- **Filtre événements par statut** : Filtrer DRAFT/PENDING_REVIEW/REVIEWED/ARCHIVED dans dashboard
-- **Gestion utilisateurs autorisés** : Interface admin pour approuver/refuser utilisateurs Google OAuth
-- **Charte graphique ICC Rennes** : Intégration palette couleurs + typographies (Amsterdam Four, Anton, DM Sans, Agrandir)
+#### Qualité
+- **Tests** : Infrastructure Vitest prête, aucun test écrit
+- **Documentation OpenAPI** : Spec JSON dispo, pas d'interface Swagger UI
 
-#### Qualité & Avancé
-- Tests unitaires et e2e
-- PWA service worker (offline)
+#### PWA
+- **Service worker** : Pas de mode offline
+- **Icônes PWA** : Référencées dans manifest.json mais fichiers absents dans `public/icons/`
+
+#### Fonctionnalités avancées
 - Notifications email
-- Documentation OpenAPI (mise à jour avec nouvelles routes settings)
 
 ## Pour démarrer
 
