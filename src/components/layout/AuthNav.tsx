@@ -43,7 +43,7 @@ export function AuthNav() {
           )
         })}
       </nav>
-      <nav className="md:hidden flex items-center gap-2 bg-white/10 rounded-full p-1 overflow-x-auto no-scrollbar max-w-[60vw]">
+      <nav className="md:hidden flex items-center gap-2 bg-white/10 rounded-full p-1 overflow-x-auto no-scrollbar w-full">
         {navItems.map((item) => {
           const active = isActive(pathname, item)
           return (
