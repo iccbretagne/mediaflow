@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
       where: { id: "default" },
     })
 
+    // Delete old logo files before uploading new ones (same keys)
+    if (currentSettings?.logoKey) {
+      await Promise.all([
+        deleteFile(getLogoKey("original")),
+        deleteFile(getLogoKey("header")),
+        deleteFile(getLogoKey("login")),
+      ]).catch(() => {}) // Ignore errors on cleanup
+    }
+
     // Process image
     const buffer = Buffer.from(await file.arrayBuffer())
     const processed = await processLogo(buffer)
@@ -64,15 +73,6 @@ export async function POST(request: NextRequest) {
         logoFilename: file.name,
       },
     })
-
-    // Delete old logo files if they existed
-    if (currentSettings?.logoKey) {
-      await Promise.all([
-        deleteFile(getLogoKey("original")),
-        deleteFile(getLogoKey("header")),
-        deleteFile(getLogoKey("login")),
-      ]).catch(() => {}) // Ignore errors on cleanup
-    }
 
     return successResponse({
       success: true,
