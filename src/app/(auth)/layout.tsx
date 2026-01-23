@@ -66,15 +66,19 @@ export default async function AuthLayout({
       {/* Header */}
       <header className="bg-icc-violet border-b-2 border-icc-violet-dark shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center md:h-16 gap-3 py-3 md:py-0">
             {/* Logo */}
-            <HeaderLogo />
+            <div className="flex items-center justify-between">
+              <HeaderLogo />
+            </div>
 
             {/* Navigation */}
-            <AuthNav />
+            <div className="w-full md:w-auto">
+              <AuthNav />
+            </div>
 
             {/* Actions + User menu */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-between md:justify-end">
               <Link href="/events/new">
                 <Button
                   variant="secondary"
