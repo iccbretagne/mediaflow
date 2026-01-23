@@ -24,7 +24,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           id={textareaId}
-          className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 resize-none
+          className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 resize-none text-gray-900
             ${
               error
                 ? "border-icc-rouge focus:ring-icc-rouge/20 focus:border-icc-rouge"
