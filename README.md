@@ -69,6 +69,8 @@ See `.env.example` for all required variables:
 - [OpenAPI Spec](./docs/openapi.yaml) (snapshot, générée depuis Zod)
 - [Mise en production](./docs/PRODUCTION.md)
 - [Etat des lieux](./docs/STATUS.md)
+- [Release process](./docs/RELEASE.md)
+- [Changelog](./CHANGELOG.md)
 - API Documentation: `/docs` (Swagger UI)
 
 ## Workflow
