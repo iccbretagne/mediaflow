@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",
