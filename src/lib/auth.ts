@@ -4,6 +4,13 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./prisma"
 import { ApiError } from "./api-utils"
 import type { NextRequest } from "next/server"
+import {
+  type Permission,
+  type Role,
+  hasPermission,
+  hasAnyPermission,
+  getPermissions,
+} from "./permissions"
 
 // ============================================
 // NEXTAUTH CONFIGURATION
@@ -71,6 +78,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           session.user.role = dbUser?.role || "ADMIN"
           session.user.status = dbUser?.status || "PENDING"
         }
+
+        // Add permissions to session
+        session.user.permissions = getPermissions(session.user.role as Role)
       }
       return session
     },
@@ -122,6 +132,26 @@ export async function requireAdmin(request?: NextRequest) {
   return user
 }
 
+export async function requirePermission(permission: Permission, request?: NextRequest) {
+  const user = await requireAuth(request)
+
+  if (!hasPermission(user.role as Role, permission)) {
+    throw new ApiError(403, `Permission required: ${permission}`, "FORBIDDEN")
+  }
+
+  return user
+}
+
+export async function requireAnyPermission(permissions: Permission[], request?: NextRequest) {
+  const user = await requireAuth(request)
+
+  if (!hasAnyPermission(user.role as Role, permissions)) {
+    throw new ApiError(403, `One of these permissions required: ${permissions.join(", ")}`, "FORBIDDEN")
+  }
+
+  return user
+}
+
 // ============================================
 // TYPE AUGMENTATION
 // ============================================
@@ -135,6 +165,7 @@ declare module "next-auth" {
       image?: string | null
       role: "ADMIN" | "MEDIA"
       status: "PENDING" | "ACTIVE" | "REJECTED"
+      permissions: Permission[]
     }
   }
 
@@ -143,3 +174,7 @@ declare module "next-auth" {
     status?: "PENDING" | "ACTIVE" | "REJECTED"
   }
 }
+
+// Re-export permissions types and helpers for convenience
+export type { Permission, Role }
+export { hasPermission, hasAnyPermission, getPermissions }

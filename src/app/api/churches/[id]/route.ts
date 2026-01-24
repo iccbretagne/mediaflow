@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { UpdateChurchSchema } from "@/lib/schemas"
 
@@ -32,10 +32,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PATCH /api/churches/[id] - Modifier une église (admin only)
+// PATCH /api/churches/[id] - Modifier une église (churches:manage permission)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    await requireAdmin(request)
+    await requirePermission("churches:manage", request)
     const { id } = await params
 
     const body = await request.json()
@@ -73,10 +73,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/churches/[id] - Supprimer une église (admin only)
+// DELETE /api/churches/[id] - Supprimer une église (churches:manage permission)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    await requireAdmin(request)
+    await requirePermission("churches:manage", request)
     const { id } = await params
 
     // Vérifier si l'église a des événements

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import {
   validateQuery,
   successResponse,
@@ -8,10 +8,10 @@ import {
 } from "@/lib/api-utils"
 import { ListUsersQuerySchema } from "@/lib/schemas"
 
-// GET /api/users - Liste tous les utilisateurs (admin only)
+// GET /api/users - Liste tous les utilisateurs (users:view permission)
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requirePermission("users:view", request)
 
     const query = validateQuery(request, ListUsersQuerySchema)
 

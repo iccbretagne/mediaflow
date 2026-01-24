@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import {
   validateParams,
   successResponse,
@@ -13,10 +13,10 @@ type RouteParams = {
   params: Promise<{ id: string }>
 }
 
-// PATCH /api/users/[id] - Modifier un utilisateur (admin only)
+// PATCH /api/users/[id] - Modifier un utilisateur (users:manage permission)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    await requireAdmin(request)
+    await requirePermission("users:manage", request)
     const { id } = validateParams(await params, IdParamSchema)
 
     const body = await request.json()

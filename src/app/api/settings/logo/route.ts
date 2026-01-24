@@ -1,15 +1,15 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { uploadFile, getLogoKey, deleteFile } from "@/lib/s3"
 import { processLogo } from "@/lib/sharp"
 import { LOGO_ALLOWED_TYPES, LOGO_MAX_SIZE } from "@/lib/schemas"
 
-// POST /api/settings/logo - Upload new logo (admin only)
+// POST /api/settings/logo - Upload new logo (settings:manage permission)
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requirePermission("settings:manage", request)
 
     const formData = await request.formData()
     const file = formData.get("file") as File
@@ -83,10 +83,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/settings/logo - Remove logo (admin only)
+// DELETE /api/settings/logo - Remove logo (settings:manage permission)
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requirePermission("settings:manage", request)
 
     const settings = await prisma.appSettings.findUnique({
       where: { id: "default" },

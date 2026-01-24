@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { CreateChurchSchema } from "@/lib/schemas"
 
@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/churches - Créer une nouvelle église (admin only)
+// POST /api/churches - Créer une nouvelle église (churches:manage permission)
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requirePermission("churches:manage", request)
 
     const body = await request.json()
     const validated = CreateChurchSchema.parse(body)

@@ -13,14 +13,20 @@ import { deleteFiles } from "@/lib/s3"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
+// Helper to build ownership filter based on role
+function getOwnershipFilter(userId: string, role: string) {
+  return role === "ADMIN" ? {} : { createdById: userId }
+}
+
 // GET /api/events/[id] - Get event details
+// All authenticated users can view any event
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
 
     const event = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id },
       include: {
         church: {
           select: { name: true },
@@ -60,6 +66,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH /api/events/[id] - Update event
+// ADMIN: can update any event, MEDIA: only own events
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await requireAuth()
@@ -67,7 +74,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await validateBody(request, UpdateEventSchema)
 
     const existing = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id, ...getOwnershipFilter(user.id, user.role) },
     })
 
     if (!existing) {
@@ -107,13 +114,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/events/[id] - Delete event
+// ADMIN: can delete any event, MEDIA: only own events
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
 
     const event = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id, ...getOwnershipFilter(user.id, user.role) },
       include: { photos: true },
     })
 

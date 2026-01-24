@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui"
 import { HeaderLogo } from "@/components/layout/HeaderLogo"
 import { AuthNav } from "@/components/layout/AuthNav"
+import { PermissionProvider } from "@/components/providers/PermissionProvider"
+import type { Role, Permission } from "@/lib/permissions"
 
 export default async function AuthLayout({
   children,
@@ -61,67 +63,72 @@ export default async function AuthLayout({
     )
   }
 
+  const role = session.user.role as Role
+  const permissions = (session.user.permissions || []) as Permission[]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-icc-violet border-b-2 border-icc-violet-dark shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center md:h-16 gap-3 py-3 md:py-0">
-            {/* Logo */}
-            <div className="flex items-center justify-between">
-              <HeaderLogo />
-            </div>
-
-            {/* Navigation */}
-            <div className="w-full md:w-auto">
-              <AuthNav />
-            </div>
-
-            {/* Actions + User menu */}
-            <div className="flex items-center gap-4 justify-between md:justify-end">
-              <Link href="/events/new">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white text-icc-violet hover:bg-icc-jaune hover:text-icc-violet"
-                >
-                  Nouvel événement
-                </Button>
-              </Link>
-              <div className="flex items-center gap-2">
-                {session.user.image && (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || ""}
-                    className="w-8 h-8 rounded-full"
-                  />
-                )}
-                <span className="text-sm text-white/90 hidden sm:block">
-                  {session.user.name || session.user.email}
-                </span>
+    <PermissionProvider role={role} permissions={permissions}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-icc-violet border-b-2 border-icc-violet-dark shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center md:h-16 gap-3 py-3 md:py-0">
+              {/* Logo */}
+              <div className="flex items-center justify-between">
+                <HeaderLogo />
               </div>
-              <form
-                action={async () => {
-                  "use server"
-                  await signOut({ redirectTo: "/" })
-                }}
-              >
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  type="submit"
-                  className="bg-white/10 text-white hover:bg-white/20"
+
+              {/* Navigation */}
+              <div className="w-full md:w-auto">
+                <AuthNav />
+              </div>
+
+              {/* Actions + User menu */}
+              <div className="flex items-center gap-4 justify-between md:justify-end">
+                <Link href="/events/new">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white text-icc-violet hover:bg-icc-jaune hover:text-icc-violet"
+                  >
+                    Nouvel événement
+                  </Button>
+                </Link>
+                <div className="flex items-center gap-2">
+                  {session.user.image && (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || ""}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <span className="text-sm text-white/90 hidden sm:block">
+                    {session.user.name || session.user.email}
+                  </span>
+                </div>
+                <form
+                  action={async () => {
+                    "use server"
+                    await signOut({ redirectTo: "/" })
+                  }}
                 >
-                  Déconnexion
-                </Button>
-              </form>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="submit"
+                    className="bg-white/10 text-white hover:bg-white/20"
+                  >
+                    Déconnexion
+                  </Button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main content */}
-      <main>{children}</main>
-    </div>
+        {/* Main content */}
+        <main>{children}</main>
+      </div>
+    </PermissionProvider>
   )
 }

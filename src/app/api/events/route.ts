@@ -12,6 +12,7 @@ import {
 import { CreateEventSchema, ListEventsQuerySchema } from "@/lib/schemas"
 
 // GET /api/events - List events
+// All authenticated users can see all events
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth()
@@ -20,7 +21,6 @@ export async function GET(request: NextRequest) {
     const { skip, take } = getPaginationParams(query.page, query.limit)
 
     const where = {
-      createdById: user.id,
       ...(query.status && { status: query.status }),
       ...(query.churchId && { churchId: query.churchId }),
       ...(query.from || query.to

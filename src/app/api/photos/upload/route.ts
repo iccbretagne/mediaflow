@@ -6,9 +6,10 @@ import { uploadFile, getOriginalKey, getThumbnailKey, getSignedThumbnailUrl } fr
 import { processImage, validateFile, getExtensionFromMimeType } from "@/lib/sharp"
 
 // POST /api/photos/upload - Upload photos
+// All authenticated users can upload to any event
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
 
     const formData = await request.formData()
     const eventId = formData.get("eventId") as string
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "No files provided", "MISSING_FILES")
     }
 
-    // Verify event exists and belongs to user
+    // Verify event exists
     const event = await prisma.event.findUnique({
-      where: { id: eventId, createdById: user.id },
+      where: { id: eventId },
     })
 
     if (!event) {

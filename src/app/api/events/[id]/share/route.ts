@@ -14,15 +14,16 @@ import { createShareToken } from "@/lib/tokens"
 type RouteParams = { params: Promise<{ id: string }> }
 
 // POST /api/events/[id]/share - Create share token
+// All authenticated users can create share tokens for any event
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
     const body = await validateBody(request, CreateShareTokenSchema)
 
-    // Check event exists and belongs to user
+    // Check event exists
     const event = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id },
     })
 
     if (!event) {
@@ -56,14 +57,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // GET /api/events/[id]/share - List share tokens
+// All authenticated users can list share tokens for any event
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
 
-    // Check event exists and belongs to user
+    // Check event exists
     const event = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id },
     })
 
     if (!event) {
@@ -96,9 +98,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/events/[id]/share - Delete a share token
+// All authenticated users can delete share tokens for any event
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
     const url = new URL(request.url)
     const tokenId = url.searchParams.get("tokenId")
@@ -107,9 +110,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       throw new ApiError(400, "tokenId query parameter required", "MISSING_PARAM")
     }
 
-    // Check event exists and belongs to user
+    // Check event exists
     const event = await prisma.event.findUnique({
-      where: { id, createdById: user.id },
+      where: { id },
     })
 
     if (!event) {

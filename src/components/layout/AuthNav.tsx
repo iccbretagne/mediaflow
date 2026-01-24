@@ -2,18 +2,21 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { usePermissions } from "@/components/providers/PermissionProvider"
+import type { Permission } from "@/lib/permissions"
 
 type NavItem = {
   href: string
   label: string
   match: string[]
+  permission?: Permission
 }
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", match: ["/dashboard", "/events"] },
-  { href: "/churches", label: "Églises", match: ["/churches"] },
-  { href: "/users", label: "Utilisateurs", match: ["/users"] },
-  { href: "/settings", label: "Paramètres", match: ["/settings"] },
+  { href: "/churches", label: "Églises", match: ["/churches"], permission: "churches:manage" },
+  { href: "/users", label: "Utilisateurs", match: ["/users"], permission: "users:view" },
+  { href: "/settings", label: "Paramètres", match: ["/settings"], permission: "settings:view" },
 ]
 
 function isActive(pathname: string, item: NavItem) {
@@ -22,11 +25,17 @@ function isActive(pathname: string, item: NavItem) {
 
 export function AuthNav() {
   const pathname = usePathname() || ""
+  const { can } = usePermissions()
+
+  // Filter nav items based on permissions
+  const visibleNavItems = navItems.filter(
+    (item) => !item.permission || can(item.permission)
+  )
 
   return (
     <>
       <nav className="hidden md:flex items-center gap-2 bg-white/10 rounded-full p-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = isActive(pathname, item)
           return (
             <Link
@@ -44,7 +53,7 @@ export function AuthNav() {
         })}
       </nav>
       <nav className="md:hidden flex items-center gap-2 bg-white/10 rounded-full p-1 overflow-x-auto no-scrollbar w-full">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = isActive(pathname, item)
           return (
             <Link
