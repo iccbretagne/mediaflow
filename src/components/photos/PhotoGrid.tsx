@@ -52,6 +52,7 @@ export function PhotoGrid({ photos }: PhotoGridProps) {
           key={photo.id}
           className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photo.thumbnailUrl}
             alt={photo.filename}

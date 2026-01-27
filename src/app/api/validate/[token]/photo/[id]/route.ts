@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { validateParams, successResponse, errorResponse, ApiError } from "@/lib/api-utils"
-import { TokenParamSchema, IdParamSchema } from "@/lib/schemas"
 import { validateShareToken } from "@/lib/tokens"
 import { getSignedOriginalUrl } from "@/lib/s3"
 import { z } from "zod"

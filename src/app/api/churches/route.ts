@@ -5,7 +5,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { CreateChurchSchema } from "@/lib/schemas"
 
 // GET /api/churches - Liste toutes les églises
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const churches = await prisma.church.findMany({
       orderBy: { name: "asc" },

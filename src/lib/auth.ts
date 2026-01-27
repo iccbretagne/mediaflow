@@ -30,7 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       // Auto-approve super admins
       if (user.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase())) {
         const existingUser = await prisma.user.findUnique({
@@ -96,7 +96,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 // AUTH HELPERS
 // ============================================
 
-export async function requireAuth(request?: NextRequest) {
+export async function requireAuth() {
   const session = await auth()
 
   if (!session?.user) {

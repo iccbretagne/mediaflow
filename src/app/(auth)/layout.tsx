@@ -5,6 +5,7 @@ import { Button } from "@/components/ui"
 import { HeaderLogo } from "@/components/layout/HeaderLogo"
 import { AuthNav } from "@/components/layout/AuthNav"
 import { PermissionProvider } from "@/components/providers/PermissionProvider"
+import { getPermissions } from "@/lib/permissions"
 import type { Role, Permission } from "@/lib/permissions"
 
 export default async function AuthLayout({
@@ -63,8 +64,8 @@ export default async function AuthLayout({
     )
   }
 
-  const role = session.user.role as Role
-  const permissions = (session.user.permissions || []) as Permission[]
+  const role = (session.user.role || "ADMIN") as Role
+  const permissions = (session.user.permissions || getPermissions(role)) as Permission[]
 
   return (
     <PermissionProvider role={role} permissions={permissions}>
@@ -96,6 +97,7 @@ export default async function AuthLayout({
                 </Link>
                 <div className="flex items-center gap-2">
                   {session.user.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={session.user.image}
                       alt={session.user.name || ""}

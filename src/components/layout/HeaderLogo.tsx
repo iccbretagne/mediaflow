@@ -20,6 +20,7 @@ export function HeaderLogo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2">
       {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={logoUrl} alt="PicFlow" className="h-8 object-contain" />
       ) : (
         <>

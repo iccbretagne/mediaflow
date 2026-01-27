@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { validateParams, successResponse, errorResponse } from "@/lib/api-utils"
 import { TokenParamSchema } from "@/lib/schemas"
 import { validateShareToken } from "@/lib/tokens"

@@ -1,10 +1,9 @@
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { successResponse, errorResponse } from "@/lib/api-utils"
 import { getSignedLogoUrl, getLogoKey } from "@/lib/s3"
 
 // GET /api/settings - Fetch current app settings (public, no auth)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const settings = await prisma.appSettings.findUnique({
       where: { id: "default" },

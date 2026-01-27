@@ -82,6 +82,7 @@ export function FaviconUploader() {
       {(hasFavicon || previewUrl) && (
         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
           {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt="Nouveau favicon"

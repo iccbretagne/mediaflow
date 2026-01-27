@@ -52,7 +52,7 @@ export default function DownloadPage() {
     fetchData()
   }, [token])
 
-  async function downloadPhoto(photoId: string, filename: string): Promise<boolean> {
+  async function downloadPhoto(photoId: string): Promise<boolean> {
     setDownloading((prev) => new Set(prev).add(photoId))
 
     try {
@@ -256,6 +256,7 @@ export default function DownloadPage() {
               >
                 {/* Thumbnail */}
                 <div className="aspect-square bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photo.thumbnailUrl}
                     alt={photo.filename}
@@ -267,7 +268,7 @@ export default function DownloadPage() {
                 {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
-                    onClick={() => downloadPhoto(photo.id, photo.filename)}
+                    onClick={() => downloadPhoto(photo.id)}
                     disabled={isDownloading}
                     className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >

@@ -21,7 +21,7 @@ export default function ChurchesPage() {
       const res = await fetch("/api/churches")
       const data = await res.json()
       setChurches(data.data || [])
-    } catch (err) {
+    } catch {
       setError("Erreur lors du chargement des églises")
     } finally {
       setLoading(false)

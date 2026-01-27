@@ -30,7 +30,7 @@ export default function UsersPage() {
       const res = await fetch(url)
       const data = await res.json()
       setUsers(data.data || [])
-    } catch (err) {
+    } catch {
       setError("Erreur lors du chargement des utilisateurs")
     } finally {
       setLoading(false)
@@ -165,6 +165,7 @@ export default function UsersPage() {
                 <div className="flex flex-col lg:flex-row justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1">
                     {user.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={user.image}
                         alt={user.name || user.email}

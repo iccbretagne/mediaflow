@@ -15,7 +15,7 @@ import { CreateEventSchema, ListEventsQuerySchema } from "@/lib/schemas"
 // All authenticated users can see all events
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const query = validateQuery(request, ListEventsQuerySchema)
 
     const { skip, take } = getPaginationParams(query.page, query.limit)

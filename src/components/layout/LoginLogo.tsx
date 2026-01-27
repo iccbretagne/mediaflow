@@ -19,6 +19,7 @@ export function LoginLogo() {
   if (logoUrl) {
     return (
       <div className="mb-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoUrl}
           alt="PicFlow"

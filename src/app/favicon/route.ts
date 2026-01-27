@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { s3Client, BUCKET, getFaviconKey } from "@/lib/s3"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
@@ -6,7 +6,7 @@ import { readFileSync } from "fs"
 import { join } from "path"
 
 // Dynamic favicon route
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const settings = await prisma.appSettings.findUnique({
       where: { id: "default" },
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "public, max-age=3600",
       },
     })
-  } catch (error) {
+  } catch {
     // Return default on error
     const defaultFavicon = readFileSync(
       join(process.cwd(), "src/app/favicon.ico")

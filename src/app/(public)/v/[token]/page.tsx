@@ -330,6 +330,7 @@ export default function ValidationPage() {
                 onClick={() => toggleDecision(photo.id)}
                 className="relative aspect-square bg-gray-200"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.thumbnailUrl}
                   alt={photo.filename}
@@ -393,6 +394,7 @@ export default function ValidationPage() {
               transition: dragging ? "none" : "transform 150ms ease-out",
             }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentPhoto.thumbnailUrl}
               alt={currentPhoto.filename}
