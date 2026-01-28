@@ -94,6 +94,6 @@ DRAFT ──► IN_REVIEW ──► FINAL_APPROVED
 Le workflow photo par swipe **reste inchangé**. Les deux flux coexistent via le champ `Media.type` :
 
 - `PHOTO` → workflow swipe (PENDING / APPROVED / REJECTED)
-- `VISUAL` / `VIDEO` → workflow révision (DRAFT / IN_REVIEW / REVISION_REQUESTED / FINAL_APPROVED)
+- `VISUAL` / `VIDEO` → workflow révision (DRAFT / IN_REVIEW / REVISION_REQUESTED / REJECTED / FINAL_APPROVED)
 
 La transition de statut est contrôlée par la route `PATCH /api/media/[id]/status` qui applique la machine à états correspondante selon le type de média.
