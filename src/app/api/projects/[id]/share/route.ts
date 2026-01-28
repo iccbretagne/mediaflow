@@ -9,33 +9,32 @@ import {
   ApiError,
 } from "@/lib/api-utils"
 import { CreateShareTokenSchema, IdParamSchema } from "@/lib/schemas"
-import { createEventShareToken } from "@/lib/tokens"
+import { createShareToken } from "@/lib/tokens"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
-// POST /api/events/[id]/share - Create share token
-// All authenticated users can create share tokens for any event
+// POST /api/projects/[id]/share - Create share token
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
     const body = await validateBody(request, CreateShareTokenSchema)
 
-    // Check event exists
-    const event = await prisma.event.findUnique({
+    // Check project exists
+    const project = await prisma.project.findUnique({
       where: { id },
     })
 
-    if (!event) {
-      throw new ApiError(404, "Event not found", "NOT_FOUND")
+    if (!project) {
+      throw new ApiError(404, "Project not found", "NOT_FOUND")
     }
 
-    const token = await createEventShareToken(
-      id,
-      body.type,
-      body.label,
-      body.expiresInDays
-    )
+    const token = await createShareToken({
+      projectId: id,
+      type: body.type,
+      label: body.label,
+      expiresInDays: body.expiresInDays,
+    })
 
     return successResponse(
       {
@@ -56,24 +55,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// GET /api/events/[id]/share - List share tokens
-// All authenticated users can list share tokens for any event
+// GET /api/projects/[id]/share - List share tokens
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
     const { id } = validateParams(await params, IdParamSchema)
 
-    // Check event exists
-    const event = await prisma.event.findUnique({
+    // Check project exists
+    const project = await prisma.project.findUnique({
       where: { id },
     })
 
-    if (!event) {
-      throw new ApiError(404, "Event not found", "NOT_FOUND")
+    if (!project) {
+      throw new ApiError(404, "Project not found", "NOT_FOUND")
     }
 
     const tokens = await prisma.shareToken.findMany({
-      where: { eventId: id },
+      where: { projectId: id },
       orderBy: { createdAt: "desc" },
     })
 
@@ -97,8 +95,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/events/[id]/share - Delete a share token
-// All authenticated users can delete share tokens for any event
+// DELETE /api/projects/[id]/share - Delete a share token
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
@@ -110,17 +107,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       throw new ApiError(400, "tokenId query parameter required", "MISSING_PARAM")
     }
 
-    // Check event exists
-    const event = await prisma.event.findUnique({
+    // Check project exists
+    const project = await prisma.project.findUnique({
       where: { id },
     })
 
-    if (!event) {
-      throw new ApiError(404, "Event not found", "NOT_FOUND")
+    if (!project) {
+      throw new ApiError(404, "Project not found", "NOT_FOUND")
     }
 
     await prisma.shareToken.delete({
-      where: { id: tokenId, eventId: id },
+      where: { id: tokenId, projectId: id },
     })
 
     return new Response(null, { status: 204 })

@@ -74,12 +74,18 @@ export async function validateShareToken(
 // CREATE SHARE TOKEN
 // ============================================
 
-export async function createShareToken(
-  eventId: string,
-  type: TokenType,
-  label?: string,
+type CreateShareTokenOptions = {
+  type: TokenType
+  label?: string
   expiresInDays?: number
-) {
+} & (
+  | { eventId: string; projectId?: never }
+  | { projectId: string; eventId?: never }
+)
+
+export async function createShareToken(options: CreateShareTokenOptions) {
+  const { type, label, expiresInDays, eventId, projectId } = options
+
   const token = generateToken()
   const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
@@ -91,7 +97,8 @@ export async function createShareToken(
       type,
       label,
       expiresAt,
-      eventId,
+      ...(eventId && { eventId }),
+      ...(projectId && { projectId }),
     },
   })
 
@@ -102,4 +109,14 @@ export async function createShareToken(
     ...shareToken,
     url: `${baseUrl}/${urlPath}/${token}`,
   }
+}
+
+// Legacy overload for backward compatibility with events
+export async function createEventShareToken(
+  eventId: string,
+  type: TokenType,
+  label?: string,
+  expiresInDays?: number
+) {
+  return createShareToken({ eventId, type, label, expiresInDays })
 }

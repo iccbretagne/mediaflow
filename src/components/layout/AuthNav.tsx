@@ -13,7 +13,8 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", match: ["/dashboard", "/events"] },
+  { href: "/dashboard", label: "Événements", match: ["/dashboard", "/events"] },
+  { href: "/projects", label: "Projets", match: ["/projects"] },
   { href: "/churches", label: "Églises", match: ["/churches"], permission: "churches:manage" },
   { href: "/users", label: "Utilisateurs", match: ["/users"], permission: "users:view" },
   { href: "/settings", label: "Paramètres", match: ["/settings"], permission: "settings:view" },
