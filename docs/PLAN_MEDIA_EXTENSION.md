@@ -15,7 +15,7 @@ Conteneur thématique (alternative à Event pour les contenus non liés à un é
 
 ### Media (remplace Photo)
 - `type` : `PHOTO | VISUAL | VIDEO`
-- `status` : `PENDING | APPROVED | REJECTED` (photos) + `DRAFT | IN_REVIEW | REVISION_REQUESTED | FINAL_APPROVED` (visuels/vidéos)
+- `status` : `PENDING | APPROVED | REJECTED` (photos) + `DRAFT | IN_REVIEW | REVISION_REQUESTED | REJECTED | FINAL_APPROVED` (visuels/vidéos)
 - `eventId` OU `projectId` (mutuellement exclusif, jamais les deux)
 - `duration` (secondes, vidéos uniquement)
 - `scheduledDeletionAt`, `deletedFromS3` (rétention vidéos)
@@ -81,12 +81,16 @@ L'upload direct existant (`POST /api/photos/upload` via FormData) reste pour les
 
 **Machine à états** (visuels & vidéos) :
 ```
-DRAFT → IN_REVIEW → REVISION_REQUESTED → IN_REVIEW → FINAL_APPROVED
+DRAFT → IN_REVIEW → FINAL_APPROVED
+                  ├→ REJECTED → IN_REVIEW (réversible)
+                  └→ REVISION_REQUESTED → IN_REVIEW (boucle)
 ```
 
 - Soumettre pour review : `DRAFT → IN_REVIEW`
 - Demander une révision : `IN_REVIEW → REVISION_REQUESTED` (accompagné d'un commentaire)
 - Soumettre une nouvelle version : `REVISION_REQUESTED → IN_REVIEW` (crée un `MediaVersion`)
+- Rejeter : `IN_REVIEW → REJECTED`
+- Resoumettre après rejet : `REJECTED → IN_REVIEW` (réversible)
 - Approuver : `IN_REVIEW → FINAL_APPROVED`
 
 Le flux photo existant (swipe `PENDING → APPROVED/REJECTED`) reste inchangé.

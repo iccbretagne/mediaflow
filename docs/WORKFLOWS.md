@@ -46,6 +46,11 @@ Créateur                          Reviewer (pasteur/responsable)
     │                          │       │  Approuver
     │                          │       │──────► [FINAL_APPROVED] ✓
     │                          │       │
+    │                          │       │  Rejeter
+    │                          │       │──────► [REJECTED]
+    │                          │       │           │  Resoumettre
+    │                          │       │           └──► [IN_REVIEW]
+    │                          │       │
     │                          │       │  Demander révision + commentaire
     │  ◄───── [REVISION_REQUESTED] ◄──┘
     │                                  │
@@ -58,6 +63,7 @@ Créateur                          Reviewer (pasteur/responsable)
 
 ```
 DRAFT ──► IN_REVIEW ──► FINAL_APPROVED
+                    ├─► REJECTED ──► IN_REVIEW (réversible)
                     └─► REVISION_REQUESTED ──► IN_REVIEW (boucle)
 ```
 
@@ -75,7 +81,7 @@ DRAFT ──► IN_REVIEW ──► FINAL_APPROVED
 |--------|----------------|--------------------------|
 | Conteneur | Event | Event ou Project |
 | Upload | FormData < 50 Mo | Presigned URL (jusqu'à 500 Mo) |
-| Statuts | PENDING → APPROVED ↔ REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED (+ boucle révision) |
+| Statuts | PENDING → APPROVED ↔ REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED / REJECTED (réversible) / REVISION_REQUESTED (boucle) |
 | Versioning | Non | Oui (MediaVersion) |
 | Commentaires | Non | Oui (général + timecode vidéo) |
 | Validation UX | Swipe mobile | ReviewModal (viewer + commentaires + actions) |
