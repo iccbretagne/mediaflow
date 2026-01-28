@@ -213,6 +213,7 @@ export default function ValidationPage() {
     setSubmitting(true)
     try {
       const decisionsArray = Array.from(decisions.entries())
+        .filter(([photoId]) => data?.photos.find((p) => p.id === photoId)?.type === "PHOTO")
         .filter(([, status]) => status === "APPROVED" || status === "REJECTED")
         .map(([photoId, status]) => ({
           photoId,
@@ -349,6 +350,11 @@ export default function ValidationPage() {
     const approvedCount = Array.from(decisions.values()).filter((d) => d === "APPROVED").length
     const rejectedCount = Array.from(decisions.values()).filter((d) => d === "REJECTED").length
     const revisionCount = Array.from(decisions.values()).filter((d) => d === "REVISION_REQUESTED").length
+    const photoIds = data.photos.filter((p) => p.type === "PHOTO").map((p) => p.id)
+    const photoDecisionCount = photoIds.filter((id) => {
+      const status = decisions.get(id)
+      return status === "APPROVED" || status === "REJECTED"
+    }).length
     const filteredPhotos = data.photos.filter((photo) => {
       if (summaryFilter === "ALL") return true
       return decisions.get(photo.id) === summaryFilter
@@ -481,11 +487,11 @@ export default function ValidationPage() {
           <Button
             onClick={submit}
             loading={submitting}
-            disabled={decisions.size === 0}
+            disabled={photoDecisionCount === 0}
             className="w-full"
             size="lg"
           >
-            Confirmer ({decisions.size}/{totalPhotos})
+            Confirmer ({photoDecisionCount}/{photoIds.length})
           </Button>
         </div>
       </div>
