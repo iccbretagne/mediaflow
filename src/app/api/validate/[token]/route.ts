@@ -56,12 +56,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const photosWithUrls = await Promise.all(
         media.map(async (m) => {
           const latest = m.versions[0]
+          const safeStatus = m.status === "APPROVED" || m.status === "REJECTED" ? m.status : "PENDING"
           return {
             id: m.id,
             type: "PHOTO",
             filename: m.filename,
             thumbnailUrl: latest ? await getSignedThumbnailUrl(latest.thumbnailKey) : "",
-            status: m.status,
+            status: safeStatus,
             width: m.width,
             height: m.height,
             uploadedAt: m.createdAt.toISOString(),
