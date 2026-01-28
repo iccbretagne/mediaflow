@@ -11,3 +11,9 @@ export * from "./photo"
 export * from "./user"
 export * from "./validation"
 export * from "./settings"
+
+// Extension média
+export * from "./media"
+export * from "./project"
+export * from "./version"
+export * from "./comment"

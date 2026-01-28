@@ -20,6 +20,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const shareToken = await validateShareToken(token, "VALIDATOR")
 
     const event = shareToken.event
+
+    // This endpoint only works with event-based tokens
+    if (!event) {
+      throw new ApiError(400, "This token is not associated with an event", "INVALID_TOKEN_TYPE")
+    }
+
     const photos = event.photos
 
     // Generate signed URLs for thumbnails
@@ -67,6 +73,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const eventId = shareToken.eventId
     const validatorLabel = shareToken.label || "Validator"
+
+    // This endpoint only works with event-based tokens
+    if (!eventId) {
+      throw new ApiError(400, "This token is not associated with an event", "INVALID_TOKEN_TYPE")
+    }
 
     // Validate all photoIds belong to this event
     const photoIds = body.decisions.map((d) => d.photoId)

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { validateParams, successResponse, errorResponse } from "@/lib/api-utils"
+import { validateParams, successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { TokenParamSchema } from "@/lib/schemas"
 import { validateShareToken } from "@/lib/tokens"
 import { getSignedThumbnailUrl } from "@/lib/s3"
@@ -14,6 +14,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Accept both VALIDATOR and MEDIA tokens for download
     const shareToken = await validateShareToken(token)
     const event = shareToken.event
+
+    // This endpoint only works with event-based tokens
+    if (!event) {
+      throw new ApiError(400, "This token is not associated with an event", "INVALID_TOKEN_TYPE")
+    }
 
     // Filter only approved photos
     const approvedPhotos = event.photos.filter(

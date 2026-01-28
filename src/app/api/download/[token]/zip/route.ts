@@ -15,6 +15,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const shareToken = await validateShareToken(token)
     const event = shareToken.event
 
+    // This endpoint only works with event-based tokens
+    if (!event) {
+      throw new ApiError(400, "This token is not associated with an event", "INVALID_TOKEN_TYPE")
+    }
+
     // Filter only approved photos
     const approvedPhotos = event.photos.filter((p) => p.status === "APPROVED")
 

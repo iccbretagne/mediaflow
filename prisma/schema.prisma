@@ -34,9 +34,12 @@ model User {
   emailVerified DateTime?
 
   // Relations
-  events   Event[]   @relation("EventCreator")
-  accounts Account[]
-  sessions Session[]
+  events        Event[]        @relation("EventCreator")
+  projects      Project[]      @relation("ProjectCreator")
+  mediaVersions MediaVersion[] @relation("VersionCreator")
+  comments      Comment[]      @relation("CommentAuthor")
+  accounts      Account[]
+  sessions      Session[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -56,7 +59,8 @@ model Church {
   address String? @db.VarChar(500)
 
   // Relations
-  events Event[]
+  events   Event[]
+  projects Project[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -89,6 +93,7 @@ model Event {
   createdById String
   createdBy   User         @relation("EventCreator", fields: [createdById], references: [id])
   photos      Photo[]
+  media       Media[]
   shareTokens ShareToken[]
 
   // Timestamps
@@ -102,6 +107,31 @@ model Event {
 }
 
 // ============================================
+// PROJETS (conteneur alternatif à Event)
+// ============================================
+
+model Project {
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+
+  // Relations
+  churchId    String
+  church      Church       @relation(fields: [churchId], references: [id])
+  createdById String
+  createdBy   User         @relation("ProjectCreator", fields: [createdById], references: [id])
+  media       Media[]
+  shareTokens ShareToken[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdById])
+  @@index([churchId])
+}
+
+// ============================================
 // PHOTOS
 // ============================================
 
@@ -109,6 +139,31 @@ enum PhotoStatus {
   PENDING  // En attente de validation
   APPROVED // Validée
   REJECTED // Rejetée
+}
+
+// ============================================
+// MÉDIAS (Extension)
+// ============================================
+
+enum MediaType {
+  PHOTO  // Images événements
+  VISUAL // Visuels (PNG, SVG, PDF)
+  VIDEO  // Vidéos (MP4, MOV)
+}
+
+enum MediaStatus {
+  PENDING            // Photos: en attente
+  APPROVED           // Photos: validée
+  REJECTED           // Rejetée (photos et médias)
+  DRAFT              // Médias: brouillon
+  IN_REVIEW          // Médias: en révision
+  REVISION_REQUESTED // Médias: révision demandée
+  FINAL_APPROVED     // Médias: approuvé définitivement
+}
+
+enum CommentType {
+  GENERAL  // Commentaire général
+  TIMECODE // Commentaire avec timecode (vidéos)
 }
 
 model Photo {
@@ -139,6 +194,110 @@ model Photo {
 }
 
 // ============================================
+// MÉDIAS (nouvelle table extensible)
+// ============================================
+
+model Media {
+  id       String      @id @default(cuid())
+  type     MediaType
+  status   MediaStatus @default(PENDING)
+  filename String      @db.VarChar(255)
+  mimeType String      @db.VarChar(100)
+  size     Int // Taille en bytes
+
+  // Dimensions (images/vidéos)
+  width  Int?
+  height Int?
+
+  // Durée (vidéos uniquement, en secondes)
+  duration Int?
+
+  // Suppression programmée
+  scheduledDeletionAt DateTime?
+
+  // Relations (mutuellement exclusives)
+  eventId   String?
+  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Versions
+  versions MediaVersion[]
+  comments Comment[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledDeletionAt])
+}
+
+// ============================================
+// VERSIONS DE MÉDIAS
+// ============================================
+
+model MediaVersion {
+  id            String @id @default(cuid())
+  versionNumber Int    @default(1)
+
+  // Fichiers S3
+  originalKey  String @db.VarChar(512)
+  thumbnailKey String @db.VarChar(512)
+
+  // Notes sur cette version
+  notes String? @db.Text
+
+  // Relations
+  mediaId     String
+  media       Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User   @relation("VersionCreator", fields: [createdById], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@unique([mediaId, versionNumber])
+  @@index([mediaId])
+  @@index([createdById])
+}
+
+// ============================================
+// COMMENTAIRES
+// ============================================
+
+model Comment {
+  id      String      @id @default(cuid())
+  type    CommentType @default(GENERAL)
+  content String      @db.Text
+
+  // Timecode (vidéos, en secondes)
+  timecode Int?
+
+  // Thread (réponses)
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  // Relations
+  mediaId  String
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation("CommentAuthor", fields: [authorId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// ============================================
 // TOKENS DE PARTAGE
 // ============================================
 
@@ -160,15 +319,18 @@ model ShareToken {
   lastUsedAt DateTime?
   usageCount Int       @default(0)
 
-  // Relations
-  eventId String
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  // Relations (mutuellement exclusives)
+  eventId   String?
+  event     Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   // Timestamps
   createdAt DateTime @default(now())
 
   @@index([token])
   @@index([eventId])
+  @@index([projectId])
 }
 
 // ============================================
@@ -214,6 +376,7 @@ model AppSettings {
   faviconKey      String?  @db.VarChar(512) // Clé S3 du favicon
   logoFilename    String?  @db.VarChar(255)
   faviconFilename String?  @db.VarChar(255)
+  retentionDays   Int      @default(30) // Durée de rétention des médias
 
   // Timestamps
   createdAt DateTime @default(now())

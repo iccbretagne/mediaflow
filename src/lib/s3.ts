@@ -59,6 +59,48 @@ export function getFaviconKey(
 }
 
 // ============================================
+// MEDIA EXTENSION KEYS
+// ============================================
+
+export type ContainerType = "events" | "projects"
+
+export function getMediaOriginalKey(
+  containerType: ContainerType,
+  containerId: string,
+  mediaId: string,
+  extension: string
+): string {
+  return `${containerType}/${containerId}/media/originals/${mediaId}.${extension}`
+}
+
+export function getMediaThumbnailKey(
+  containerType: ContainerType,
+  containerId: string,
+  mediaId: string
+): string {
+  return `${containerType}/${containerId}/media/thumbnails/${mediaId}.webp`
+}
+
+export function getVersionOriginalKey(
+  mediaId: string,
+  versionNumber: number,
+  extension: string
+): string {
+  return `versions/${mediaId}/v${versionNumber}/${mediaId}.${extension}`
+}
+
+export function getVersionThumbnailKey(
+  mediaId: string,
+  versionNumber: number
+): string {
+  return `versions/${mediaId}/v${versionNumber}/${mediaId}.webp`
+}
+
+export function getQuarantineKey(uploadId: string, extension: string): string {
+  return `quarantine/${uploadId}.${extension}`
+}
+
+// ============================================
 // UPLOAD
 // ============================================
 
