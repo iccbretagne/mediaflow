@@ -2,7 +2,12 @@
 
 > Dépôt : github.com/iccbretagne/picflow
 > Licence : MIT
-> Document lié : [EXPRESSION_BESOIN.md](./EXPRESSION_BESOIN.md)
+
+**Documents liés :**
+- [Expression de Besoin](./EXPRESSION_BESOIN.md) - Contexte métier
+- [Workflows](./WORKFLOWS.md) - Schémas des flux de validation
+- [RBAC](./RBAC.md) - Rôles et contrôle d'accès
+- [Extension Média](./PLAN_MEDIA_EXTENSION.md) - Plan d'évolution (visuels, vidéos)
 
 ---
 
@@ -12,34 +17,42 @@
 
 ```
 ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│    User     │       │    Event    │       │    Photo    │
+│    User     │       │   Church    │       │ AppSettings │
 ├─────────────┤       ├─────────────┤       ├─────────────┤
-│ id visages      │       │ id          │       │ id          │
-│ email       │◄──────│ createdById │       │ eventId     │──────►│
-│ name        │  1:N  │ name        │◄──────│ filename    │  N:1  │
-│ image       │       │ date        │  1:N  │ originalKey │       │
-│ role        │       │ church      │       │ thumbnailKey│       │
-│ createdAt   │       │ description │       │ status      │       │
-│ updatedAt   │       │ status      │       │ uploadedAt  │       │
-└─────────────┘       │ createdAt   │       │ validatedAt │       │
-                      │ updatedAt   │       │ validatedBy │       │
-                      └─────────────┘       └─────────────┘
-                             │
+│ id          │       │ id          │       │ id          │
+│ email       │       │ name        │       │ logoKey     │
+│ name        │       │ address     │       │ faviconKey  │
+│ image       │       └──────┬──────┘       └─────────────┘
+│ role        │              │
+│ status      │              │ 1:N
+│ createdAt   │              ▼
+└──────┬──────┘       ┌─────────────┐       ┌─────────────┐
+       │              │    Event    │       │    Photo    │
+       │ 1:N          ├─────────────┤       ├─────────────┤
+       └─────────────►│ id          │       │ id          │
+                      │ name        │◄──────│ eventId     │
+                      │ date        │  1:N  │ filename    │
+                      │ churchId    │       │ originalKey │
+                      │ createdById │       │ thumbnailKey│
+                      │ status      │       │ status      │
+                      └──────┬──────┘       │ validatedAt │
+                             │              └─────────────┘
                              │ 1:N
                              ▼
-                      ┌─────────────┐
-                      │ ShareToken  │
-                      ├─────────────┤
-                      │ id          │
-                      │ eventId     │
-                      │ token       │
-                      │ type        │  (validator | media)
-                      │ expiresAt   │
-                      │ createdAt   │
-                      └─────────────┘
+                      ┌─────────────┐       ┌─────────────┐
+                      │ ShareToken  │       │   ZipJob    │
+                      ├─────────────┤       ├─────────────┤
+                      │ id          │       │ id          │
+                      │ eventId     │       │ status      │
+                      │ token       │       │ eventId     │
+                      │ type        │       │ photoIds    │
+                      │ expiresAt   │       │ downloadKey │
+                      └─────────────┘       └─────────────┘
 ```
 
 ### 1.2 Schéma Prisma (MySQL)
+
+> **Note Prisma 7+** : Le `datasource` ne contient pas d'URL. La connexion est configurée via driver adapter dans `src/lib/prisma.ts`.
 
 ```prisma
 // prisma/schema.prisma
@@ -50,7 +63,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================
@@ -62,12 +74,20 @@ enum UserRole {
   MEDIA        // Équipe média - téléchargement uniquement
 }
 
+enum UserStatus {
+  PENDING      // En attente d'approbation
+  ACTIVE       // Approuvé, peut accéder à l'app
+  REJECTED     // Rejeté, ne peut pas accéder
+}
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String     @id @default(cuid())
+  email         String     @unique
   name          String?
-  image         String?   @db.Text
-  role          UserRole  @default(ADMIN)
+  image         String?    @db.Text
+  role          UserRole   @default(ADMIN)
+  status        UserStatus @default(PENDING)
+  emailVerified DateTime?
 
   // Relations
   events        Event[]   @relation("EventCreator")
@@ -81,6 +101,26 @@ model User {
   sessions      Session[]
 
   @@index([email])
+  @@index([status])
+}
+
+// ============================================
+// ÉGLISES
+// ============================================
+
+model Church {
+  id        String   @id @default(cuid())
+  name      String   @unique @db.VarChar(255)
+  address   String?  @db.VarChar(500)
+
+  // Relations
+  events    Event[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
 }
 
 // ============================================
@@ -98,11 +138,12 @@ model Event {
   id            String       @id @default(cuid())
   name          String       @db.VarChar(255)
   date          DateTime
-  church        String       @db.VarChar(255)
   description   String?      @db.Text
   status        EventStatus  @default(DRAFT)
 
   // Relations
+  churchId      String
+  church        Church       @relation(fields: [churchId], references: [id])
   createdById   String
   createdBy     User         @relation("EventCreator", fields: [createdById], references: [id])
   photos        Photo[]
@@ -113,6 +154,7 @@ model Event {
   updatedAt     DateTime     @updatedAt
 
   @@index([createdById])
+  @@index([churchId])
   @@index([status])
   @@index([date])
 }
@@ -188,6 +230,55 @@ model ShareToken {
 }
 
 // ============================================
+// JOBS (génération ZIP async)
+// ============================================
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ZipJob {
+  id          String     @id @default(cuid())
+  status      JobStatus  @default(PENDING)
+  progress    Int        @default(0)
+
+  // Résultat
+  downloadKey String?    @db.VarChar(512)
+  expiresAt   DateTime?
+  error       String?    @db.Text
+
+  // Context
+  eventId     String
+  photoIds    Json
+  tokenId     String
+
+  // Timestamps
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+}
+
+// ============================================
+// PARAMÈTRES APPLICATION
+// ============================================
+
+model AppSettings {
+  id              String   @id @default("default")
+  logoKey         String?  @db.VarChar(512)
+  faviconKey      String?  @db.VarChar(512)
+  logoFilename    String?  @db.VarChar(255)
+  faviconFilename String?  @db.VarChar(255)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
 // NEXTAUTH (tables requises)
 // ============================================
 
@@ -234,10 +325,12 @@ model VerificationToken {
 
 | Table | Index | Justification |
 |-------|-------|---------------|
-| `User` | `email` | Recherche rapide à l'auth |
-| `Event` | `createdById`, `status`, `date` | Filtres liste événements |
+| `User` | `email`, `status` | Recherche rapide à l'auth, filtrage par statut |
+| `Church` | `name` | Lookup par nom |
+| `Event` | `createdById`, `churchId`, `status`, `date` | Filtres liste événements |
 | `Photo` | `eventId`, `status`, `(eventId, status)` | Liste photos + filtres validation |
 | `ShareToken` | `token`, `eventId` | Lookup rapide par token |
+| `ZipJob` | `status` | Filtrage jobs en cours |
 
 ---
 

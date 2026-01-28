@@ -1,8 +1,13 @@
-# État des lieux (code) & reste à faire
+# État des lieux & Backlog
 
-Date du constat : 22 janvier 2026
+> Dernière mise à jour : janvier 2026
 
-Ce document synthétise ce qui est **effectivement présent dans le code** et compare avec l’état des lieux partagé (Claude). Il sert de référence unique pour le backlog.
+Ce document synthétise l'état actuel du projet et le reste à faire.
+
+**Documents liés :**
+- [CLAUDE.md](../CLAUDE.md) - Contexte IA complet
+- [WORKFLOWS.md](./WORKFLOWS.md) - Schémas des flux de validation
+- [PLAN_MEDIA_EXTENSION.md](./PLAN_MEDIA_EXTENSION.md) - Plan d'évolution
 
 ---
 
@@ -23,7 +28,7 @@ Ce document synthétise ce qui est **effectivement présent dans le code** et co
 | Partage | Tokens validation/téléchargement | ✅ OK (UI + API) | — |
 | Validation | “Swipe + grid récap” | ✅ Swipe tactile + recap filtrable + skip | Badge statut visible, raccourcis clavier, auto-récap en fin de liste (`src/app/(public)/v/[token]/page.tsx`) |
 | Téléchargement | Page média + ZIP | ✅ OK (page + ZIP) | ZIP sync côté API (peut être lourd) |
-| API | 10 routes | ✅ 11 routes `route.ts` | Écart de comptage (inclut `validate/[token]/photo/[id]`) |
+| API | — | ✅ 18 routes API | Format standardisé `{ data }` |
 
 ---
 
@@ -36,11 +41,10 @@ Ce document synthétise ce qui est **effectivement présent dans le code** et co
 
 ---
 
-## 3) Écarts / incohérences repérés
+## 3) Points d'attention
 
-- **Swagger UI annoncée** : `/api/docs` expose l’OpenAPI, mais pas de page `/docs` dans l’app.
-- **Upload formats** : backend accepte HEIC/HEIF, input UI limite à jpeg/png/webp.
-- **Routes API** : 11 routes, pas 10 (voir `src/app/api/**/route.ts`).
+- **Swagger UI** : `/api/docs` expose l'OpenAPI JSON, mais pas de page `/docs` avec interface Swagger UI.
+- **Upload formats** : backend accepte HEIC/HEIF, input UI limite à jpeg/png/webp (à aligner).
 
 ---
 
@@ -59,7 +63,22 @@ Ce document synthétise ce qui est **effectivement présent dans le code** et co
 
 ---
 
-## 5) Références utiles
+## 5) Roadmap : Extension Média
+
+Voir [PLAN_MEDIA_EXTENSION.md](./PLAN_MEDIA_EXTENSION.md) pour le plan complet.
+
+| Phase | Contenu | Statut |
+|-------|---------|--------|
+| 1. Fondation | Schema Prisma, Zod schemas, migration Photo→Media | 🔜 À faire |
+| 2. Projets | CRUD projets, pages admin | 🔜 À faire |
+| 3. Upload presigned | Sign/confirm routes, MediaUploader | 🔜 À faire |
+| 4. Workflow révision | Commentaires, transitions, ReviewModal | 🔜 À faire |
+| 5. Versioning | Upload versions, VersionTimeline | 🔜 À faire |
+| 6. Rétention | Cron cleanup, settings UI | 🔜 À faire |
+
+---
+
+## 6) Références utiles
 
 - Validation UI : `src/app/(public)/v/[token]/page.tsx`
 - Téléchargement media : `src/app/(public)/d/[token]/page.tsx`

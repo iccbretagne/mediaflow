@@ -228,7 +228,16 @@ npm run dev
 
 ## Documentation
 
-- [Expression de Besoin](./docs/EXPRESSION_BESOIN.md) - Contexte métier complet
+### Technique
 - [Conception Technique](./docs/CONCEPTION_TECHNIQUE.md) - Architecture détaillée
 - [RBAC](./docs/RBAC.md) - Rôles et contrôle d'accès
 - [OpenAPI Spec](./docs/openapi.yaml) - Spec API complète
+- [État & Backlog](./docs/STATUS.md) - État actuel et reste à faire
+
+### Métier & Workflows
+- [Expression de Besoin](./docs/EXPRESSION_BESOIN.md) - Contexte métier complet
+- [Workflows](./docs/WORKFLOWS.md) - Schémas des flux de validation (photos et médias)
+- [Guide Utilisateur](./docs/GUIDE_UTILISATEUR.md) - Guide pour validateurs, équipe média et admins
+
+### Évolution
+- [Extension Média](./docs/PLAN_MEDIA_EXTENSION.md) - Plan d'évolution : visuels, vidéos, workflow révision
