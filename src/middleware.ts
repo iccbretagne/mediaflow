@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 
 // Note: Avoid importing NextAuth/Prisma in middleware to keep it edge-safe.
 export function middleware(_request: NextRequest) {
+  void _request
   return NextResponse.next()
 }
 

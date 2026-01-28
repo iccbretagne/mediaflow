@@ -84,8 +84,9 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE /api/settings/logo - Remove logo (settings:manage permission)
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
+    void _request
     await requirePermission("settings:manage")
 
     const settings = await prisma.appSettings.findUnique({
