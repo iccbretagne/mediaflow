@@ -19,12 +19,12 @@ function isValidTransition(current: string, next: string, type: string): boolean
   }
 
   const transitions: Record<string, string[]> = {
-    DRAFT: ["IN_REVIEW"],
+    DRAFT: ["IN_REVIEW", "FINAL_APPROVED", "REJECTED", "REVISION_REQUESTED"],
+    PENDING: ["IN_REVIEW", "FINAL_APPROVED", "REJECTED", "REVISION_REQUESTED"],
     IN_REVIEW: ["FINAL_APPROVED", "REJECTED", "REVISION_REQUESTED", "IN_REVIEW"],
     REVISION_REQUESTED: ["IN_REVIEW", "FINAL_APPROVED", "REJECTED", "REVISION_REQUESTED"],
     REJECTED: ["IN_REVIEW", "FINAL_APPROVED", "REVISION_REQUESTED", "REJECTED"],
     FINAL_APPROVED: ["IN_REVIEW", "REJECTED", "REVISION_REQUESTED", "FINAL_APPROVED"],
-    PENDING: [],
     APPROVED: [],
   }
 
@@ -82,15 +82,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       const token = new URL(request.url).searchParams.get("token")
-      let authorId: string | null = null
       let authorName: string | null = null
 
+      let authorConnect: { id: string } | null = null
       if (token) {
         const shareToken = await validateShareToken(token, "VALIDATOR")
         authorName = shareToken.label || "Validator"
       } else {
         const user = await requireAuth()
-        authorId = user.id
+        authorName = user.name || null
+        authorConnect = { id: user.id }
       }
 
       await prisma.comment.create({
@@ -98,10 +99,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           content: body.comment.trim(),
           type: "GENERAL",
           timecode: null,
-          parentId: null,
-          mediaId: media.id,
-          authorId,
+          media: { connect: { id: media.id } },
           authorName,
+          ...(authorConnect ? { author: { connect: authorConnect } } : {}),
         },
       })
     }

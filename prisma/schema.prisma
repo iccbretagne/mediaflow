@@ -290,7 +290,7 @@ model Comment {
   mediaId  String
   media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   authorId String?
-  author   User?  @relation("CommentAuthor", fields: [authorId], references: [id])
+  author   User?  @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt DateTime @default(now())

@@ -13,8 +13,9 @@ import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
 type RouteParams = { params: Promise<{ token: string }> }
 
-function normalizeMediaStatus(status: string): "PENDING" | "APPROVED" | "REJECTED" {
+function normalizeMediaStatus(status: string): "PENDING" | "APPROVED" | "REJECTED" | "REVISION_REQUESTED" {
   if (status === "APPROVED" || status === "FINAL_APPROVED") return "APPROVED"
+  if (status === "REVISION_REQUESTED") return "REVISION_REQUESTED"
   if (status === "REJECTED") return "REJECTED"
   return "PENDING"
 }

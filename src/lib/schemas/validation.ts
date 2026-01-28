@@ -32,7 +32,7 @@ export const SubmitValidationSchema = z
     decisions: z
       .array(
         z.object({
-          photoId: z.string().cuid(),
+          photoId: z.string().cuid2(),
           status: z.enum(["APPROVED", "REJECTED"]),
         })
       )

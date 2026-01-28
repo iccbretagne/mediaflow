@@ -168,8 +168,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { id } = validateParams(await params, MediaIdParamSchema)
     const body = await validateBody(request, CreateCommentSchema)
     const token = new URL(request.url).searchParams.get("token")
-    let authorId: string | null = null
     let authorName: string | null = null
+    let authorConnect: { id: string } | null = null
 
     if (token) {
       const { shareToken } = await getMediaForTokenWrite(id, token)
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     } else {
       const user = await requireAuth()
       await getMediaForWrite(id, user.id)
-      authorId = user.id
+      authorConnect = { id: user.id }
     }
 
     if (body.parentId) {
@@ -192,10 +192,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         content: body.content,
         type: body.type,
         timecode: body.timecode ?? null,
-        parentId: body.parentId,
-        mediaId: id,
-        authorId,
+        ...(body.parentId ? { parent: { connect: { id: body.parentId } } } : {}),
+        media: { connect: { id } },
         authorName,
+        ...(authorConnect ? { author: { connect: authorConnect } } : {}),
       },
       include: {
         author: { select: { name: true, image: true } },

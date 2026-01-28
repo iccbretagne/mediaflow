@@ -10,7 +10,7 @@ interface Photo {
   filename: string
   thumbnailUrl: string
   originalUrl?: string
-  status: "PENDING" | "APPROVED" | "REJECTED"
+  status: "PENDING" | "APPROVED" | "REJECTED" | "REVISION_REQUESTED"
 }
 
 interface EventData {
@@ -68,7 +68,7 @@ export default function ValidationPage() {
         // Initialize decisions from existing status
         const initialDecisions = new Map<string, Decision>()
         eventData.photos.forEach((photo: Photo) => {
-          if (photo.status !== "PENDING") {
+          if (photo.status === "APPROVED" || photo.status === "REJECTED" || photo.status === "REVISION_REQUESTED") {
             initialDecisions.set(photo.id, photo.status as Decision)
           }
         })
@@ -84,6 +84,7 @@ export default function ValidationPage() {
 
   const currentPhoto = data?.photos[currentIndex]
   const totalPhotos = data?.photos.length || 0
+  const hasReviewable = data?.photos.some((p) => p.type !== "PHOTO") ?? false
 
   // Decision handlers
   const makeDecision = useCallback(
@@ -197,8 +198,6 @@ export default function ValidationPage() {
         const current = next.get(photoId)
         if (current === "APPROVED") {
           next.set(photoId, "REJECTED")
-        } else if (current === "REJECTED") {
-          next.set(photoId, "REVISION_REQUESTED")
         } else {
           next.set(photoId, "APPROVED")
         }
@@ -272,6 +271,12 @@ export default function ValidationPage() {
       setShowSummary(true)
     }
   }, [data, totalPhotos, currentIndex])
+
+  useEffect(() => {
+    if (!hasReviewable && summaryFilter === "REVISION_REQUESTED") {
+      setSummaryFilter("ALL")
+    }
+  }, [hasReviewable, summaryFilter])
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -401,16 +406,18 @@ export default function ValidationPage() {
           >
             Rejetées ({rejectedCount})
           </button>
-          <button
-            onClick={() => setSummaryFilter("REVISION_REQUESTED")}
-            className={`px-3 py-1 text-sm rounded-full ${
-              summaryFilter === "REVISION_REQUESTED"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            Révision demandée ({revisionCount})
-          </button>
+          {hasReviewable && (
+            <button
+              onClick={() => setSummaryFilter("REVISION_REQUESTED")}
+              className={`px-3 py-1 text-sm rounded-full ${
+                summaryFilter === "REVISION_REQUESTED"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              Révision demandée ({revisionCount})
+            </button>
+          )}
         </div>
 
         {/* Grid */}
@@ -459,7 +466,7 @@ export default function ValidationPage() {
                   {decision === "APPROVED" ? "✓" : decision === "REJECTED" ? "✗" : "!"}
                 </div>
               )}
-              {decision === "REVISION_REQUESTED" && (
+              {hasReviewable && decision === "REVISION_REQUESTED" && (
                 <span className="absolute bottom-1 left-1 px-2 py-0.5 rounded-full text-[10px] bg-yellow-500 text-white">
                   Révision
                 </span>
