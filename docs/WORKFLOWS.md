@@ -18,11 +18,11 @@ Flux simple de validation par swipe, sans versioning ni commentaires.
 ### Machine à états
 
 ```
-PENDING ──► APPROVED
+PENDING ──► APPROVED ◄──► REJECTED
         └─► REJECTED
 ```
 
-- Transition unique et irréversible via swipe mobile (`/v/[token]`)
+- Transitions réversibles : une photo approuvée peut être rejetée et vice-versa via swipe mobile (`/v/[token]`)
 - Conteneur : **Event** uniquement
 - Upload : FormData (< 50 Mo)
 - Pas de versioning, pas de commentaires
@@ -75,7 +75,7 @@ DRAFT ──► IN_REVIEW ──► FINAL_APPROVED
 |--------|----------------|--------------------------|
 | Conteneur | Event | Event ou Project |
 | Upload | FormData < 50 Mo | Presigned URL (jusqu'à 500 Mo) |
-| Statuts | PENDING → APPROVED / REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED (+ boucle révision) |
+| Statuts | PENDING → APPROVED ↔ REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED (+ boucle révision) |
 | Versioning | Non | Oui (MediaVersion) |
 | Commentaires | Non | Oui (général + timecode vidéo) |
 | Validation UX | Swipe mobile | ReviewModal (viewer + commentaires + actions) |
