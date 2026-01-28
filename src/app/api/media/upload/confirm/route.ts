@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { randomBytes } from "crypto"
+import { createId } from "@paralleldrive/cuid2"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth"
 import {
@@ -24,11 +24,8 @@ import { getUploadSession, deleteUploadSession } from "@/lib/upload-session"
 import { validateMagicBytes } from "@/lib/magic-bytes"
 import { generateThumbnail } from "@/lib/sharp"
 
-// Generate a cuid-like ID
 function generateMediaId(): string {
-  const timestamp = Date.now().toString(36)
-  const random = randomBytes(8).toString("base64url")
-  return `c${timestamp}${random}`.slice(0, 25)
+  return createId()
 }
 
 // POST /api/media/upload/confirm - Confirm upload and create media record

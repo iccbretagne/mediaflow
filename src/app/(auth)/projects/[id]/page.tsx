@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { Card, CardContent, CardHeader, Badge } from "@/components/ui"
 import { ProjectActions } from "@/components/projects"
-import { MediaUploader } from "@/components/media"
+import { MediaUploader, MediaReviewGrid } from "@/components/media"
+import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
 type MediaType = "PHOTO" | "VISUAL" | "VIDEO"
 type MediaStatus = "PENDING" | "APPROVED" | "REJECTED" | "DRAFT" | "IN_REVIEW" | "REVISION_REQUESTED" | "FINAL_APPROVED"
@@ -26,6 +27,11 @@ type ProjectWithRelations = {
     type: MediaType
     status: MediaStatus
     createdAt: Date
+    versions: {
+      originalKey: string
+      thumbnailKey: string
+      versionNumber: number
+    }[]
   }[]
   shareTokens: {
     id: string
@@ -37,14 +43,13 @@ type ProjectWithRelations = {
   }[]
 }
 
-const mediaStatusConfig: Record<MediaStatus, { label: string; variant: "default" | "warning" | "success" | "info" | "danger" }> = {
-  PENDING: { label: "En attente", variant: "warning" },
-  APPROVED: { label: "Validé", variant: "success" },
-  REJECTED: { label: "Rejeté", variant: "danger" },
-  DRAFT: { label: "Brouillon", variant: "default" },
-  IN_REVIEW: { label: "En révision", variant: "info" },
-  REVISION_REQUESTED: { label: "Révision demandée", variant: "warning" },
-  FINAL_APPROVED: { label: "Approuvé", variant: "success" },
+type MediaItem = {
+  id: string
+  type: MediaType
+  status: MediaStatus
+  filename: string
+  thumbnailUrl: string
+  originalUrl?: string
 }
 
 export default async function ProjectDetailPage({
@@ -67,6 +72,12 @@ export default async function ProjectDetailPage({
       },
       media: {
         orderBy: { createdAt: "desc" },
+        include: {
+          versions: {
+            orderBy: { versionNumber: "desc" },
+            take: 1,
+          },
+        },
       },
       shareTokens: {
         orderBy: { createdAt: "desc" },
@@ -89,6 +100,27 @@ export default async function ProjectDetailPage({
       (m) => m.status === "PENDING" || m.status === "DRAFT" || m.status === "IN_REVIEW"
     ).length,
   }
+
+  const mediaWithUrls = await Promise.all(
+    project.media.map(async (media) => {
+      const latestVersion = media.versions[0]
+      if (!latestVersion) return null
+
+      return {
+        id: media.id,
+        type: media.type,
+        status: media.status,
+        filename: media.filename,
+        thumbnailUrl: await getSignedThumbnailUrl(latestVersion.thumbnailKey),
+        originalUrl:
+          media.type === "VIDEO"
+            ? await getSignedOriginalUrl(latestVersion.originalKey)
+            : undefined,
+      }
+    })
+  )
+
+  const mediaItems = mediaWithUrls.filter((item): item is MediaItem => item !== null)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -222,40 +254,13 @@ export default async function ProjectDetailPage({
       </Card>
 
       {/* Media grid */}
-      {project.media.length > 0 ? (
+      {mediaItems.length > 0 ? (
         <Card>
           <CardHeader>
-            Médias ({project.media.length})
+            Médias ({mediaItems.length})
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {project.media.map((media) => (
-                <div
-                  key={media.id}
-                  className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden"
-                >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {media.type === "VIDEO" ? (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                    <Badge
-                      variant={mediaStatusConfig[media.status].variant}
-                      size="sm"
-                    >
-                      {mediaStatusConfig[media.status].label}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <MediaReviewGrid media={mediaItems} />
           </CardContent>
         </Card>
       ) : (

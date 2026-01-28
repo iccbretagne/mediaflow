@@ -48,6 +48,11 @@ export const IdParamSchema = z.object({
   id: z.string().cuid().openapi({ example: "clx1234567890abcdef" }),
 })
 
+// Media IDs are generated in-app and are not Prisma cuid()
+export const MediaIdParamSchema = z.object({
+  id: z.string().cuid2().openapi({ example: "cmky7c8c8a8hGF-m6sN8" }),
+})
+
 export const TokenParamSchema = z.object({
   token: z.string().length(64).openapi({ example: "a1b2c3d4e5f6..." }),
 })

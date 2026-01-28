@@ -29,7 +29,7 @@ interface EventData {
   }
 }
 
-type Decision = "APPROVED" | "REJECTED"
+type Decision = "APPROVED" | "REJECTED" | "REVISION_REQUESTED"
 
 export default function ValidationPage() {
   const params = useParams()
@@ -44,8 +44,11 @@ export default function ValidationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [undoAction, setUndoAction] = useState<{ photoId: string; prevStatus: Decision | null } | null>(null)
   const [dragX, setDragX] = useState(0)
+  const [dragY, setDragY] = useState(0)
   const [dragging, setDragging] = useState(false)
-  const [summaryFilter, setSummaryFilter] = useState<"ALL" | "APPROVED" | "REJECTED">("ALL")
+  const [summaryFilter, setSummaryFilter] = useState<"ALL" | "APPROVED" | "REJECTED" | "REVISION_REQUESTED">("ALL")
+  const [showRevisionInput, setShowRevisionInput] = useState(false)
+  const [revisionComment, setRevisionComment] = useState("")
   const pointerIdRef = useRef<number | null>(null)
   const startXRef = useRef(0)
   const startYRef = useRef(0)
@@ -129,6 +132,58 @@ export default function ValidationPage() {
     setUndoAction(null)
   }, [undoAction])
 
+  async function updateMediaStatus(
+    mediaId: string,
+    status: "FINAL_APPROVED" | "REJECTED" | "REVISION_REQUESTED",
+    comment?: string
+  ) {
+    const res = await fetch(`/api/media/${mediaId}/status?token=${token}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, comment }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error?.message || "Erreur lors de la mise à jour")
+    }
+  }
+
+  async function requestRevision() {
+    if (!currentPhoto) return
+    const content = revisionComment.trim()
+    if (!content) {
+      alert("Un commentaire est requis pour demander une révision.")
+      return
+    }
+
+    try {
+      await updateMediaStatus(currentPhoto.id, "REVISION_REQUESTED", content)
+      setRevisionComment("")
+      setShowRevisionInput(false)
+      makeDecision("REVISION_REQUESTED")
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur lors de la mise à jour")
+    }
+  }
+
+  async function handleDecision(decision: Decision) {
+    if (!currentPhoto) return
+
+    if (currentPhoto.type !== "PHOTO" && decision !== "REVISION_REQUESTED") {
+      try {
+        await updateMediaStatus(
+          currentPhoto.id,
+          decision === "APPROVED" ? "FINAL_APPROVED" : "REJECTED"
+        )
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Erreur lors de la mise à jour")
+        return
+      }
+    }
+
+    makeDecision(decision)
+  }
+
   const toggleDecision = useCallback(
     (photoId: string) => {
       setDecisions((prev) => {
@@ -136,6 +191,8 @@ export default function ValidationPage() {
         const current = next.get(photoId)
         if (current === "APPROVED") {
           next.set(photoId, "REJECTED")
+        } else if (current === "REJECTED") {
+          next.set(photoId, "REVISION_REQUESTED")
         } else {
           next.set(photoId, "APPROVED")
         }
@@ -150,10 +207,16 @@ export default function ValidationPage() {
 
     setSubmitting(true)
     try {
-      const decisionsArray = Array.from(decisions.entries()).map(([photoId, status]) => ({
-        photoId,
-        status,
-      }))
+      const decisionsArray = Array.from(decisions.entries())
+        .filter(([, status]) => status === "APPROVED" || status === "REJECTED")
+        .map(([photoId, status]) => ({
+          photoId,
+          status,
+        }))
+      if (decisionsArray.length === 0) {
+        setSubmitting(false)
+        return
+      }
 
       const res = await fetch(`/api/validate/${token}`, {
         method: "PATCH",
@@ -179,11 +242,15 @@ export default function ValidationPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return
+      }
       if (showSummary) return
       if (e.key === "ArrowLeft" || e.key === "x") {
-        makeDecision("REJECTED")
+        void handleDecision("REJECTED")
       } else if (e.key === "ArrowRight" || e.key === "v") {
-        makeDecision("APPROVED")
+        void handleDecision("APPROVED")
       } else if (e.key === " " || e.key === "ArrowDown") {
         e.preventDefault()
         skipPhoto()
@@ -191,7 +258,7 @@ export default function ValidationPage() {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [makeDecision, skipPhoto, showSummary])
+  }, [handleDecision, skipPhoto, showSummary])
 
   useEffect(() => {
     if (!data || totalPhotos === 0) return
@@ -218,6 +285,7 @@ export default function ValidationPage() {
       if (!dragging || pointerIdRef.current !== e.pointerId) return
       const deltaX = e.clientX - startXRef.current
       const deltaY = e.clientY - startYRef.current
+      setDragY(deltaY)
       if (Math.abs(deltaY) > Math.abs(deltaX)) return
       setDragX(deltaX)
     },
@@ -228,12 +296,18 @@ export default function ValidationPage() {
     if (!dragging) return
     const threshold = 80
     const deltaX = dragX
+    const deltaY = dragY
     setDragging(false)
     setDragX(0)
+    setDragY(0)
     pointerIdRef.current = null
+    if (currentPhoto?.type !== "PHOTO" && deltaY < -120) {
+      setShowRevisionInput(true)
+      return
+    }
     if (Math.abs(deltaX) < threshold) return
-    makeDecision(deltaX > 0 ? "APPROVED" : "REJECTED")
-  }, [dragging, dragX, makeDecision])
+    void handleDecision(deltaX > 0 ? "APPROVED" : "REJECTED")
+  }, [dragging, dragX, dragY, currentPhoto, handleDecision])
 
   // Loading state
   if (loading) {
@@ -263,6 +337,7 @@ export default function ValidationPage() {
   if (showSummary) {
     const approvedCount = Array.from(decisions.values()).filter((d) => d === "APPROVED").length
     const rejectedCount = Array.from(decisions.values()).filter((d) => d === "REJECTED").length
+    const revisionCount = Array.from(decisions.values()).filter((d) => d === "REVISION_REQUESTED").length
     const filteredPhotos = data.photos.filter((photo) => {
       if (summaryFilter === "ALL") return true
       return decisions.get(photo.id) === summaryFilter
@@ -320,6 +395,16 @@ export default function ValidationPage() {
           >
             Rejetées ({rejectedCount})
           </button>
+          <button
+            onClick={() => setSummaryFilter("REVISION_REQUESTED")}
+            className={`px-3 py-1 text-sm rounded-full ${
+              summaryFilter === "REVISION_REQUESTED"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            Révision demandée ({revisionCount})
+          </button>
         </div>
 
         {/* Grid */}
@@ -329,7 +414,11 @@ export default function ValidationPage() {
             return (
               <button
                 key={photo.id}
-                onClick={() => toggleDecision(photo.id)}
+                onClick={() => {
+                  if (photo.type === "PHOTO") {
+                    toggleDecision(photo.id)
+                  }
+                }}
                 className="relative aspect-square bg-gray-200"
               >
                 {photo.type === "VIDEO" && photo.originalUrl ? (
@@ -352,14 +441,23 @@ export default function ValidationPage() {
                   </>
                 )}
                 {decision && (
-                  <div
-                    className={`absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm ${
-                      decision === "APPROVED" ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  >
-                    {decision === "APPROVED" ? "✓" : "✗"}
-                  </div>
-                )}
+                <div
+                  className={`absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm ${
+                    decision === "APPROVED"
+                      ? "bg-green-500"
+                      : decision === "REJECTED"
+                      ? "bg-red-500"
+                      : "bg-yellow-500"
+                  }`}
+                >
+                  {decision === "APPROVED" ? "✓" : decision === "REJECTED" ? "✗" : "!"}
+                </div>
+              )}
+              {decision === "REVISION_REQUESTED" && (
+                <span className="absolute bottom-1 left-1 px-2 py-0.5 rounded-full text-[10px] bg-yellow-500 text-white">
+                  Révision
+                </span>
+              )}
               </button>
             )
           })}
@@ -455,6 +553,10 @@ export default function ValidationPage() {
                   <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-600 text-white">
                     Rejetée
                   </span>
+                ) : decisions.get(currentPhoto.id) === "REVISION_REQUESTED" ? (
+                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-600 text-white">
+                    Révision demandée
+                  </span>
                 ) : (
                   <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-700 text-white">
                     En attente
@@ -476,13 +578,21 @@ export default function ValidationPage() {
       )}
 
       {/* Actions */}
-      <div className="bg-black/80 px-4 pt-6 flex items-center justify-center gap-8" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+      <div className="bg-black/80 px-4 pt-6 flex items-center justify-center gap-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
         <button
-          onClick={() => makeDecision("REJECTED")}
+          onClick={() => void handleDecision("REJECTED")}
           className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center text-2xl hover:bg-red-600 transition-colors"
         >
           ✗
         </button>
+        {currentPhoto?.type !== "PHOTO" && (
+          <button
+            onClick={() => setShowRevisionInput(true)}
+            className="w-12 h-12 rounded-full bg-yellow-500 text-white flex items-center justify-center text-sm hover:bg-yellow-600 transition-colors"
+          >
+            Rev
+          </button>
+        )}
         <button
           onClick={skipPhoto}
           className="w-12 h-12 rounded-full bg-gray-600 text-white flex items-center justify-center text-sm hover:bg-gray-500 transition-colors"
@@ -496,7 +606,7 @@ export default function ValidationPage() {
           Recap
         </button>
         <button
-          onClick={() => makeDecision("APPROVED")}
+          onClick={() => void handleDecision("APPROVED")}
           className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center text-2xl hover:bg-green-600 transition-colors"
         >
           ✓
@@ -507,11 +617,44 @@ export default function ValidationPage() {
       {undoAction && (
         <div className="fixed left-4 right-4 bg-gray-800 text-white rounded-lg px-4 py-3 flex items-center justify-between" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
           <span>
-            {decisions.get(undoAction.photoId) === "APPROVED" ? "Validée" : "Rejetée"}
+            {decisions.get(undoAction.photoId) === "APPROVED"
+              ? "Validée"
+              : decisions.get(undoAction.photoId) === "REJECTED"
+              ? "Rejetée"
+              : "Révision demandée"}
           </span>
           <button onClick={undo} className="text-blue-400 font-medium">
             ANNULER
           </button>
+        </div>
+      )}
+      {showRevisionInput && currentPhoto?.type !== "PHOTO" && (
+        <div className="fixed left-4 right-4 bg-white border border-gray-200 rounded-lg px-4 py-4" style={{ bottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
+          <p className="text-sm text-gray-700 mb-2">
+            Ajouter un commentaire pour demander une révision :
+          </p>
+          <textarea
+            value={revisionComment}
+            onChange={(e) => setRevisionComment(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet/30"
+            placeholder="Ex: merci de revoir la section 00:35"
+          />
+          <div className="mt-3 flex gap-2 justify-end">
+            <button
+              onClick={() => setShowRevisionInput(false)}
+              className="px-3 py-1 text-sm text-gray-700 hover:text-gray-900"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={requestRevision}
+              className="px-4 py-1.5 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+            >
+              Demander
+            </button>
+          </div>
         </div>
       )}
     </div>

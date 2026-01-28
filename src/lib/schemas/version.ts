@@ -8,7 +8,7 @@ export const MediaVersionSchema = z
   .object({
     id: z.string().cuid(),
     versionNumber: z.number().int().min(1),
-    mediaId: z.string().cuid(),
+    mediaId: z.string().cuid2(),
     thumbnailUrl: z.string().url(),
     originalUrl: z.string().url().optional(),
     notes: z.string().nullable(),

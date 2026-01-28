@@ -274,6 +274,10 @@ model Comment {
   type    CommentType @default(GENERAL)
   content String      @db.Text
 
+  // Auteur (optionnel pour commentaires via token)
+  authorName  String? @db.VarChar(255)
+  authorImage String? @db.Text
+
   // Timecode (vidéos, en secondes)
   timecode Int?
 
@@ -285,8 +289,8 @@ model Comment {
   // Relations
   mediaId  String
   media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  authorId String
-  author   User   @relation("CommentAuthor", fields: [authorId], references: [id])
+  authorId String?
+  author   User?  @relation("CommentAuthor", fields: [authorId], references: [id])
 
   // Timestamps
   createdAt DateTime @default(now())

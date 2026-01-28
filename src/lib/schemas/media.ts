@@ -56,7 +56,7 @@ export const ALL_MEDIA_MIME_TYPES = [
 
 export const MediaSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     type: MediaTypeEnum,
     status: MediaStatusEnum,
     filename: z.string(),
@@ -92,6 +92,7 @@ export const CreateMediaSchema = z
 export const UpdateMediaStatusSchema = z
   .object({
     status: MediaStatusEnum,
+    comment: z.string().min(1).max(5000).optional(),
   })
   .openapi("UpdateMediaStatusRequest")
 
