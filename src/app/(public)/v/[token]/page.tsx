@@ -484,18 +484,20 @@ export default function ValidationPage() {
           })}
         </div>
 
-        {/* Submit button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-          <Button
-            onClick={submit}
-            loading={submitting}
-            disabled={photoDecisionCount === 0}
-            className="w-full"
-            size="lg"
-          >
-            Confirmer ({photoDecisionCount}/{photoIds.length})
-          </Button>
-        </div>
+        {/* Submit button - only for photos (visuals/videos are validated individually) */}
+        {photoIds.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+            <Button
+              onClick={submit}
+              loading={submitting}
+              disabled={photoDecisionCount === 0}
+              className="w-full"
+              size="lg"
+            >
+              Confirmer ({photoDecisionCount}/{photoIds.length})
+            </Button>
+          </div>
+        )}
       </div>
     )
   }
