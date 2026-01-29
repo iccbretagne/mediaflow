@@ -178,7 +178,8 @@ export function validateMagicBytes(
           }
         }
 
-        // Accept generic ftyp for video types
+        // MP4 and QuickTime share the same container format (ISO BMFF / ftyp box).
+        // Accept any ftyp-based video as either mp4 or quicktime.
         if (expectedMimeType === "video/mp4" || expectedMimeType === "video/quicktime") {
           return { valid: true, detectedType: expectedMimeType }
         }
@@ -204,6 +205,12 @@ export function validateMagicBytes(
     if (text.includes("<svg") || (text.includes("<?xml") && text.includes("svg"))) {
       return { valid: true, detectedType: "image/svg+xml" }
     }
+  }
+
+  // MP4 and QuickTime are interchangeable container formats
+  const videoContainerTypes = ["video/mp4", "video/quicktime"]
+  if (videoContainerTypes.includes(expectedMimeType) && detectedType && videoContainerTypes.includes(detectedType)) {
+    return { valid: true, detectedType }
   }
 
   // Direct match
