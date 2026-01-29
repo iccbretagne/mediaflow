@@ -351,7 +351,7 @@ export function MediaUploader({
             <p className="text-xs text-gray-400 mt-4">
               {acceptedTypes.includes("VISUAL") && "PNG, JPEG, SVG, PDF"}
               {acceptedTypes.includes("VISUAL") && acceptedTypes.includes("VIDEO") && " • "}
-              {acceptedTypes.includes("VIDEO") && "MP4, MOV, WebM (max 500 Mo)"}
+              {acceptedTypes.includes("VIDEO") && "MP4, MOV, WebM (max 1 Go)"}
             </p>
           </>
         )}

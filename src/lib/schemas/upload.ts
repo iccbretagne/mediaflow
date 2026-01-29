@@ -5,8 +5,8 @@ import { MediaTypeEnum, VISUAL_MIME_TYPES, VIDEO_MIME_TYPES } from "./media"
 // CONSTANTS
 // ============================================
 
-export const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB
-export const MAX_VISUAL_SIZE = 50 * 1024 * 1024 // 50 MB
+export const MAX_FILE_SIZE = (Number(process.env.MAX_FILE_SIZE_MB) || 1024) * 1024 * 1024 // default 1 GB
+export const MAX_VISUAL_SIZE = (Number(process.env.MAX_VISUAL_SIZE_MB) || 50) * 1024 * 1024 // default 50 MB
 export const PRESIGNED_URL_EXPIRY = 15 * 60 // 15 minutes in seconds
 
 // ============================================
@@ -22,7 +22,7 @@ export const RequestPresignedUrlSchema = z
       .int()
       .min(1)
       .max(MAX_FILE_SIZE)
-      .openapi({ example: 104857600, description: "File size in bytes (max 500 MB)" }),
+      .openapi({ example: 104857600, description: "File size in bytes (max 1 GB)" }),
     type: MediaTypeEnum.openapi({ example: "VIDEO" }),
     eventId: z.string().cuid2().optional(),
     projectId: z.string().cuid2().optional(),
