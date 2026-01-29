@@ -62,22 +62,25 @@ async function extractVideoThumbnail(file: File): Promise<string> {
       video.currentTime = Math.min(1, video.duration * 0.1)
     }
 
+    const objectUrl = URL.createObjectURL(file)
+
     video.onseeked = () => {
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
       ctx?.drawImage(video, 0, 0)
 
       const dataUrl = canvas.toDataURL("image/webp", 0.8)
-      video.srcObject = null
+      URL.revokeObjectURL(objectUrl)
       resolve(dataUrl)
     }
 
     video.onerror = () => {
-      video.srcObject = null
+      URL.revokeObjectURL(objectUrl)
       reject(new Error("Could not load video"))
     }
 
-    video.srcObject = file
+    // Safe: objectUrl is a blob URL from a user-selected File, not user-controlled string
+    video.src = objectUrl // lgtm[js/xss-through-dom]
   })
 }
 
