@@ -141,23 +141,29 @@ export function validateMagicBytes(
   // Special handling for container formats (MP4, MOV, HEIC share ftyp box)
   const containerFormats = ["video/mp4", "video/quicktime", "image/heic", "image/heif"]
   if (containerFormats.includes(expectedMimeType)) {
-    // Check for ftyp box signature
+    // Check for ftyp box signature - search in first 64 bytes
+    // The ftyp box is typically at offset 4, but some files may have it elsewhere
     if (buffer.length >= 12) {
-      const ftypSignature = [0x66, 0x74, 0x79, 0x70] // "ftyp"
-      const hasFtyp =
-        buffer[4] === ftypSignature[0] &&
-        buffer[5] === ftypSignature[1] &&
-        buffer[6] === ftypSignature[2] &&
-        buffer[7] === ftypSignature[3]
+      let ftypOffset = -1
+      const searchLimit = Math.min(64, buffer.length - 4)
+      for (let i = 0; i < searchLimit; i++) {
+        if (buffer[i] === 0x66 && buffer[i+1] === 0x74 && buffer[i+2] === 0x79 && buffer[i+3] === 0x70) {
+          ftypOffset = i
+          break
+        }
+      }
 
-      if (hasFtyp) {
-        // Check brand for more specific type
-        const brand = String.fromCharCode(buffer[8], buffer[9], buffer[10], buffer[11])
+      if (ftypOffset >= 0 && ftypOffset + 8 <= buffer.length) {
+        // Check brand (4 bytes after "ftyp")
+        const brandOffset = ftypOffset + 4
+        const brand = String.fromCharCode(buffer[brandOffset], buffer[brandOffset+1], buffer[brandOffset+2], buffer[brandOffset+3])
+
+        const videoTypes = ["video/mp4", "video/quicktime"]
 
         // MP4 brands
         if (["isom", "iso2", "mp41", "mp42", "avc1", "M4V "].includes(brand)) {
           return {
-            valid: expectedMimeType === "video/mp4",
+            valid: videoTypes.includes(expectedMimeType),
             detectedType: "video/mp4",
           }
         }
@@ -165,7 +171,7 @@ export function validateMagicBytes(
         // QuickTime brands
         if (["qt  ", "moov"].includes(brand)) {
           return {
-            valid: expectedMimeType === "video/quicktime",
+            valid: videoTypes.includes(expectedMimeType),
             detectedType: "video/quicktime",
           }
         }
