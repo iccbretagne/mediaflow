@@ -34,6 +34,7 @@ export const PHOTO_MIME_TYPES = [
 
 export const VISUAL_MIME_TYPES = [
   "image/png",
+  "image/jpeg",
   "image/svg+xml",
   "application/pdf",
 ] as const

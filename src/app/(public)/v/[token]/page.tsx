@@ -213,7 +213,6 @@ export default function ValidationPage() {
     setSubmitting(true)
     try {
       const decisionsArray = Array.from(decisions.entries())
-        .filter(([photoId]) => data?.photos.find((p) => p.id === photoId)?.type === "PHOTO")
         .filter(([, status]) => status === "APPROVED" || status === "REJECTED")
         .map(([photoId, status]) => ({
           photoId,
@@ -367,6 +366,9 @@ export default function ValidationPage() {
           <div className="flex items-center justify-between">
           <button
             onClick={() => {
+              // Go back to the first undecided item, or first item if all decided
+              const firstUndecided = data.photos.findIndex((p) => !decisions.has(p.id))
+              setCurrentIndex(firstUndecided >= 0 ? firstUndecided : 0)
               setShowSummary(false)
               setSummaryFilter("ALL")
             }}
@@ -503,9 +505,25 @@ export default function ValidationPage() {
     <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
       <header className="bg-black/80 text-white px-4 py-3 flex items-center justify-between">
-        <div className="text-sm truncate max-w-[60%]">{data.event.name}</div>
-        <div className="text-sm">
-          {currentIndex + 1}/{totalPhotos}
+        <div className="text-sm truncate max-w-[40%]">{data.event.name}</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+            disabled={currentIndex === 0}
+            className="text-white disabled:opacity-30 text-lg px-1"
+          >
+            ‹
+          </button>
+          <span className="text-sm">
+            {currentIndex + 1}/{totalPhotos}
+          </span>
+          <button
+            onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))}
+            disabled={currentIndex === totalPhotos - 1}
+            className="text-white disabled:opacity-30 text-lg px-1"
+          >
+            ›
+          </button>
         </div>
       </header>
 
@@ -526,7 +544,7 @@ export default function ValidationPage() {
               transition: dragging ? "none" : "transform 150ms ease-out",
             }}
           >
-            <div className="w-[90vw] h-[70vh]">
+            <div className={currentPhoto.type === "VIDEO" ? "w-[90vw] h-[70vh]" : "max-w-[90vw] max-h-[70vh] flex items-center justify-center"}>
               {currentPhoto.type === "VIDEO" && currentPhoto.originalUrl ? (
                 <video
                   src={currentPhoto.originalUrl}
@@ -540,7 +558,7 @@ export default function ValidationPage() {
                   <img
                     src={currentPhoto.thumbnailUrl}
                     alt={currentPhoto.filename}
-                    className="w-full h-full object-contain"
+                    className="max-w-full max-h-[70vh] object-contain"
                     draggable={false}
                   />
                 </>

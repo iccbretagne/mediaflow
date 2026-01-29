@@ -91,6 +91,10 @@ export function MediaReviewModal({
   const [versionNotes, setVersionNotes] = useState("")
 
   async function updateStatus(status: MediaStatus) {
+    if (status === "REVISION_REQUESTED" && !revisionComment.trim()) {
+      alert("Veuillez saisir un commentaire pour demander une révision.")
+      return
+    }
     setUpdating(true)
     try {
       const res = await fetch(`/api/media/${media.id}/status`, {

@@ -30,7 +30,7 @@ interface MediaUploaderProps {
   acceptedTypes?: ("VISUAL" | "VIDEO")[]
 }
 
-const VISUAL_MIME_TYPES = ["image/png", "image/svg+xml", "application/pdf"]
+const VISUAL_MIME_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "application/pdf"]
 const VIDEO_MIME_TYPES = ["video/mp4", "video/quicktime", "video/webm"]
 
 function getMimeTypes(acceptedTypes: ("VISUAL" | "VIDEO")[]): string {
@@ -346,7 +346,7 @@ export function MediaUploader({
               </Button>
             </label>
             <p className="text-xs text-gray-400 mt-4">
-              {acceptedTypes.includes("VISUAL") && "PNG, SVG, PDF"}
+              {acceptedTypes.includes("VISUAL") && "PNG, JPEG, SVG, PDF"}
               {acceptedTypes.includes("VISUAL") && acceptedTypes.includes("VIDEO") && " • "}
               {acceptedTypes.includes("VIDEO") && "MP4, MOV, WebM (max 500 Mo)"}
             </p>
