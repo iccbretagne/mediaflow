@@ -130,8 +130,6 @@ export function MediaReviewModal({
       const video = document.createElement("video")
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d")
-      const objectUrl = URL.createObjectURL(file)
-
       video.preload = "metadata"
       video.muted = true
       video.playsInline = true
@@ -149,22 +147,22 @@ export function MediaReviewModal({
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
         if (!ctx || canvas.width === 0 || canvas.height === 0) {
-          URL.revokeObjectURL(objectUrl)
+          video.srcObject = null
           reject(new Error("Could not read file header"))
           return
         }
         ctx.drawImage(video, 0, 0)
         const dataUrl = canvas.toDataURL("image/webp", 0.8)
-        URL.revokeObjectURL(objectUrl)
+        video.srcObject = null
         resolve(dataUrl)
       }
 
       video.onerror = () => {
-        URL.revokeObjectURL(objectUrl)
+        video.srcObject = null
         reject(new Error("Could not load video"))
       }
 
-      video.src = objectUrl
+      video.srcObject = file
       video.load()
     })
   }

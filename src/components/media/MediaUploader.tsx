@@ -68,16 +68,16 @@ async function extractVideoThumbnail(file: File): Promise<string> {
       ctx?.drawImage(video, 0, 0)
 
       const dataUrl = canvas.toDataURL("image/webp", 0.8)
-      URL.revokeObjectURL(video.src)
+      video.srcObject = null
       resolve(dataUrl)
     }
 
     video.onerror = () => {
-      URL.revokeObjectURL(video.src)
+      video.srcObject = null
       reject(new Error("Could not load video"))
     }
 
-    video.src = URL.createObjectURL(file)
+    video.srcObject = file
   })
 }
 
