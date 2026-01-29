@@ -141,9 +141,9 @@ const generator = new OpenApiGeneratorV3(registry.definitions)
 export const openApiDocument = generator.generateDocument({
   openapi: "3.0.3",
   info: {
-    title: "PicFlow API",
+    title: "MediaFlow API",
     version: "1.0.0",
-    description: "Photo validation workflow API for churches",
+    description: "Media validation workflow API for churches",
     license: { name: "MIT", url: "https://opensource.org/licenses/MIT" },
   },
   servers: [
@@ -152,8 +152,8 @@ export const openApiDocument = generator.generateDocument({
   tags: [
     { name: "Events", description: "Event management (Admin)" },
     { name: "Photos", description: "Photo upload and management (Admin)" },
-    { name: "Validation", description: "Photo validation (Token)" },
-    { name: "Download", description: "Photo download (Token)" },
+    { name: "Validation", description: "Media validation (Token)" },
+    { name: "Download", description: "Media download (Token)" },
   ],
   security: [],
 })

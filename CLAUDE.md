@@ -1,13 +1,13 @@
-# PicFlow - Contexte IA
+# MediaFlow - Contexte IA
 
 Ce fichier fournit le contexte nécessaire pour qu'un agent IA puisse comprendre et contribuer au projet.
 
 ## Résumé du projet
 
-**PicFlow** est une PWA de validation de photos pour les églises. Elle permet :
-1. À l'équipe photo d'uploader des photos d'événements
-2. Aux pasteurs/responsables de valider les photos via une interface mobile simple (swipe)
-3. À l'équipe média de télécharger les photos validées
+**MediaFlow** est une PWA de validation de médias pour les églises. Elle permet :
+1. À l'équipe média d'uploader des médias d'événements (photos, visuels, vidéos)
+2. Aux pasteurs/responsables de valider les médias via une interface mobile simple (swipe)
+3. À l'équipe média de télécharger les médias validés
 
 ## Architecture
 

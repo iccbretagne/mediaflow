@@ -26,14 +26,14 @@ Le workflow de validation passe actuellement par **WhatsApp** :
 ## 2. Objectifs
 
 ### 2.1 Objectif principal
-Mettre en place une plateforme de validation de photos **simple, intuitive et mobile-first** permettant :
-1. L'upload en masse de photos haute résolution
+Mettre en place une plateforme de validation de médias **simple, intuitive et mobile-first** permettant :
+1. L'upload en masse de médias haute résolution (photos, visuels, vidéos)
 2. La validation rapide et ergonomique par les responsables
 3. Le stockage organisé et l'accès facile pour l'équipe média
 
 ### 2.2 Objectifs secondaires
 - Réduire le temps de validation
-- Conserver la qualité originale des photos
+- Conserver la qualité originale des médias
 - Assurer la traçabilité des validations
 - Faciliter le travail de l'équipe média
 

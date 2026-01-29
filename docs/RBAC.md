@@ -1,10 +1,10 @@
-# PicFlow - Rôles et Contrôle d'Accès (RBAC)
+# MediaFlow - Rôles et Contrôle d'Accès (RBAC)
 
-Ce document décrit le système de gestion des rôles et permissions dans PicFlow.
+Ce document décrit le système de gestion des rôles et permissions dans MediaFlow.
 
 ## Vue d'ensemble
 
-PicFlow utilise un système RBAC simplifié basé sur :
+MediaFlow utilise un système RBAC simplifié basé sur :
 1. **Rôles utilisateurs** - Définissent les capacités fonctionnelles
 2. **Statuts utilisateurs** - Contrôlent l'accès à l'application
 3. **Tokens de partage** - Permettent l'accès externe sans authentification

@@ -8,7 +8,7 @@ import { PaginationQuerySchema } from "./common"
 export const CreateProjectSchema = z
   .object({
     name: z.string().min(1).max(255).openapi({ example: "Campagne Noël 2025" }),
-    churchId: z.string().cuid().openapi({ example: "clxxx..." }),
+    churchId: z.string().cuid2().openapi({ example: "cmky7c8c8a8hGF-m6sN8" }),
     description: z
       .string()
       .max(2000)
@@ -23,16 +23,16 @@ export const UpdateProjectSchema = CreateProjectSchema.partial().openapi(
 
 export const ListProjectsQuerySchema = z
   .object({
-    churchId: z.string().cuid().optional(),
+    churchId: z.string().cuid2().optional(),
   })
   .merge(PaginationQuerySchema)
   .openapi("ListProjectsQuery")
 
 export const ProjectSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     name: z.string(),
-    churchId: z.string().cuid(),
+    churchId: z.string().cuid2(),
     church: z.string(), // Nom de l'église (pour affichage)
     description: z.string().nullable(),
     createdById: z.string().cuid(),

@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto"
+import { createId } from "@paralleldrive/cuid2"
 import { prisma } from "./prisma"
 import { ApiError } from "./api-utils"
 import type { TokenType } from "@prisma/client"
@@ -93,6 +94,7 @@ export async function createShareToken(options: CreateShareTokenOptions) {
 
   const shareToken = await prisma.shareToken.create({
     data: {
+      id: createId(),
       token,
       type,
       label,

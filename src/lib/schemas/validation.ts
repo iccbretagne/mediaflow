@@ -8,7 +8,7 @@ import { PhotoSchema } from "./photo"
 export const ValidationEventResponseSchema = z
   .object({
     event: z.object({
-      id: z.string().cuid(),
+      id: z.string().cuid2(),
       name: z.string(),
       date: z.string().datetime(),
       church: z.string(),
@@ -58,7 +58,7 @@ export const ValidationResultSchema = z
 export const DownloadEventResponseSchema = z
   .object({
     event: z.object({
-      id: z.string().cuid(),
+      id: z.string().cuid2(),
       name: z.string(),
       date: z.string().datetime(),
       church: z.string(),
@@ -75,7 +75,7 @@ export const CreateZipRequestSchema = z
 
 export const ZipJobResponseSchema = z
   .object({
-    jobId: z.string().cuid(),
+    jobId: z.string().cuid2(),
     statusUrl: z.string().url(),
   })
   .openapi("ZipJobResponse")

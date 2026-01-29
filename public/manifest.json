@@ -1,7 +1,7 @@
 {
-  "name": "PicFlow",
-  "short_name": "PicFlow",
-  "description": "Photo validation workflow for church media teams",
+  "name": "MediaFlow",
+  "short_name": "MediaFlow",
+  "description": "Media validation workflow for church media teams",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

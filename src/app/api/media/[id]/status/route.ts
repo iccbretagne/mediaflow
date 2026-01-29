@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-utils"
 import { MediaIdParamSchema, UpdateMediaStatusSchema } from "@/lib/schemas"
 import { validateShareToken } from "@/lib/tokens"
+import { createId } from "@paralleldrive/cuid2"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -96,6 +97,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       await prisma.comment.create({
         data: {
+          id: createId(),
           content: body.comment.trim(),
           type: "GENERAL",
           timecode: null,

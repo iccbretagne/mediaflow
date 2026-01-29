@@ -1,14 +1,14 @@
-# PicFlow
+# MediaFlow
 
-Photo validation workflow PWA for church media teams.
+Media validation workflow PWA for church media teams (photos, visuals, videos).
 
 ## Features
 
-- **Mobile-first validation** - Swipe or tap to approve/reject photos
+- **Mobile-first validation** - Swipe or tap to approve/reject media
 - **Share links** - Generate unique URLs for validators (no account needed)
-- **HD photo preservation** - Full quality photos stored on S3
+- **HD media preservation** - Full quality assets stored on S3
 - **Multi-church support** - Organize events by church
-- **Download center** - Approved photos available for media team
+- **Download center** - Approved media available for media team
 
 ## Tech Stack
 
@@ -32,8 +32,8 @@ Photo validation workflow PWA for church media teams.
 
 ```bash
 # Clone the repository
-git clone https://github.com/iccbretagne/picflow.git
-cd picflow
+git clone https://github.com/iccbretagne/mediaflow.git
+cd mediaflow
 
 # Install dependencies
 npm install
@@ -75,10 +75,10 @@ See `.env.example` for all required variables:
 
 ## Workflow
 
-1. **Admin** creates an event and uploads photos
+1. **Admin** creates an event and uploads media
 2. **Admin** generates a validation link
-3. **Validator** receives the link and reviews photos (swipe UI)
-4. **Media team** downloads approved photos
+3. **Validator** receives the link and reviews media (swipe UI)
+4. **Media team** downloads approved media
 
 ## Release
 

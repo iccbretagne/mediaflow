@@ -8,7 +8,7 @@ import {
   errorResponse,
   ApiError,
 } from "@/lib/api-utils"
-import { CreateShareTokenSchema, IdParamSchema } from "@/lib/schemas"
+import { CreateShareTokenSchema, Cuid2IdParamSchema } from "@/lib/schemas"
 import { createEventShareToken } from "@/lib/tokens"
 
 type RouteParams = { params: Promise<{ id: string }> }
@@ -18,7 +18,7 @@ type RouteParams = { params: Promise<{ id: string }> }
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
     const body = await validateBody(request, CreateShareTokenSchema)
 
     // Check event exists
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     // Check event exists
     const event = await prisma.event.findUnique({
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
     const url = new URL(request.url)
     const tokenId = url.searchParams.get("tokenId")
 

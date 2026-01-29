@@ -1,4 +1,4 @@
-// PicFlow - Photo Validation Workflow
+// MediaFlow - Media Validation Workflow
 // Database: MySQL
 
 generator client {

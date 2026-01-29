@@ -10,7 +10,7 @@ import { z } from "zod"
 
 const ParamsSchema = z.object({
   id: z.string().cuid2(),
-  commentId: z.string().cuid(),
+  commentId: z.string().cuid2(),
 })
 
 type RouteParams = { params: Promise<{ id: string; commentId: string }> }

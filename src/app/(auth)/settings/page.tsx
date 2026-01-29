@@ -3,7 +3,7 @@ import { LogoUploader } from "@/components/settings/LogoUploader"
 import { FaviconUploader } from "@/components/settings/FaviconUploader"
 
 export const metadata: Metadata = {
-  title: "Paramètres - PicFlow",
+  title: "Paramètres - MediaFlow",
 }
 
 export default function SettingsPage() {

@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: PicFlow API
+  title: MediaFlow API
   version: 1.0.0
   description: |
-    API de gestion de workflow de validation de photos pour les églises.
+    API de gestion de workflow de validation de médias pour les églises (photos, visuels, vidéos).
 
     ## Authentification
 
@@ -13,19 +13,19 @@ info:
 
     ## Flux principal
 
-    1. Admin crée un événement et upload des photos
+    1. Admin crée un événement et upload des médias
     2. Admin génère un lien de validation (token)
-    3. Validateur accède au lien, valide/rejette les photos
-    4. Équipe média télécharge les photos validées
+    3. Validateur accède au lien, valide/rejette les médias
+    4. Équipe média télécharge les médias validés
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   contact:
     name: ICC Bretagne
-    url: https://github.com/iccbretagne/picflow
+    url: https://github.com/iccbretagne/mediaflow
 
 servers:
-  - url: https://picflow.example.com
+  - url: https://mediaflow.example.com
     description: Production
   - url: http://localhost:3000
     description: Développement local
@@ -36,9 +36,9 @@ tags:
   - name: Photos
     description: Upload et gestion des photos (Admin authentifié)
   - name: Validation
-    description: Interface de validation (Token requis)
+    description: Interface de validation médias (Token requis)
   - name: Download
-    description: Téléchargement des photos validées (Token ou Admin)
+    description: Téléchargement des médias validés (Token ou Admin)
 
 components:
   securitySchemes:
@@ -224,7 +224,7 @@ components:
         thumbnailUrl:
           type: string
           format: uri
-          example: https://s3.gra.io.cloud.ovh.net/picflow/events/.../thumb.webp?signature=...
+          example: https://s3.gra.io.cloud.ovh.net/mediaflow/events/.../thumb.webp?signature=...
         status:
           $ref: '#/components/schemas/PhotoStatus'
         width:
@@ -314,7 +314,7 @@ components:
         url:
           type: string
           format: uri
-          example: https://picflow.example.com/v/a1b2c3d4e5f6...
+          example: https://mediaflow.example.com/v/a1b2c3d4e5f6...
           description: URL complète à partager
         type:
           $ref: '#/components/schemas/TokenType'

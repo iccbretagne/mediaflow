@@ -12,16 +12,26 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full text-center">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-icc-violet/35 via-white to-icc-jaune/35">
+      <div className="absolute -top-32 -right-24 h-96 w-96 rounded-full bg-icc-violet/30 blur-3xl" />
+      <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-icc-jaune/40 blur-3xl" />
+      <div className="relative max-w-md w-full text-center">
         {/* Logo */}
         <LoginLogo />
 
         {/* Login form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl border-2 border-icc-violet/20 p-8">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-icc-violet-light">
+            <svg className="h-6 w-6 text-icc-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3S6 12.657 6 11s1.343-3 3-3 3 1.343 3 3zm0 0c0 1.657 1.343 3 3 3s3-1.343 3-3-1.343-3-3-3-3 1.343-3 3zm-7 9h14" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-icc-violet mb-2">
             Connexion
           </h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Accès sécurisé pour les équipes ICC Bretagne
+          </p>
 
           <form
             action={async () => {
@@ -52,13 +62,13 @@ export default async function HomePage() {
             </Button>
           </form>
 
-          <p className="text-sm text-gray-500 mt-6">
+          <p className="text-sm text-gray-600 mt-6">
             Réservé aux administrateurs et équipes photo
           </p>
         </div>
 
         {/* Footer */}
-        <p className="text-sm text-gray-400 mt-8">
+        <p className="text-sm text-gray-500 mt-8">
           ICC Bretagne &copy; {new Date().getFullYear()}
         </p>
       </div>

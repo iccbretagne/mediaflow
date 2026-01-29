@@ -8,7 +8,7 @@ import {
   errorResponse,
   ApiError,
 } from "@/lib/api-utils"
-import { UpdateProjectSchema, IdParamSchema } from "@/lib/schemas"
+import { UpdateProjectSchema, Cuid2IdParamSchema } from "@/lib/schemas"
 import { deleteFiles } from "@/lib/s3"
 
 type RouteParams = { params: Promise<{ id: string }> }
@@ -22,7 +22,7 @@ function getOwnershipFilter(userId: string, role: string) {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     const project = await prisma.project.findUnique({
       where: { id },
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
     const body = await validateBody(request, UpdateProjectSchema)
 
     const existing = await prisma.project.findUnique({
@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await requireAuth()
-    const { id } = validateParams(await params, IdParamSchema)
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     const project = await prisma.project.findUnique({
       where: { id, ...getOwnershipFilter(user.id, user.role) },

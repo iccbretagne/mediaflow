@@ -325,7 +325,7 @@ export default function DownloadPage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white px-4 py-6 mt-8">
         <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>PicFlow - {data.event.church}</p>
+          <p>MediaFlow - {data.event.church}</p>
         </div>
       </footer>
     </div>

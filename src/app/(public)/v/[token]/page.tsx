@@ -657,7 +657,7 @@ export default function ValidationPage() {
             onChange={(e) => setRevisionComment(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}
             rows={3}
-            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet/30"
+            className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-icc-violet/30"
             placeholder="Ex: merci de revoir la section 00:35"
           />
           <div className="mt-3 flex gap-2 justify-end">

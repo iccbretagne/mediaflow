@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
     // Create initial version record
     await prisma.mediaVersion.create({
       data: {
+        id: createId(),
         mediaId: media.id,
         versionNumber: 1,
         originalKey,

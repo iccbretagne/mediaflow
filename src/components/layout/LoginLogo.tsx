@@ -22,14 +22,14 @@ export function LoginLogo() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoUrl}
-          alt="PicFlow"
+          alt="MediaFlow"
           className="h-32 mx-auto mb-4 object-contain"
         />
-        <h1 className="text-3xl font-bold text-[color:var(--foreground)]">
-          PicFlow
+        <h1 className="text-3xl font-extrabold tracking-tight text-icc-violet">
+          MediaFlow
         </h1>
-        <p className="text-[color:var(--foreground)] opacity-70 mt-2">
-          Validation de photos simple et rapide
+        <p className="text-gray-700 mt-2">
+          Validation de médias simple et rapide
         </p>
       </div>
     )
@@ -53,11 +53,11 @@ export function LoginLogo() {
           />
         </svg>
       </div>
-      <h1 className="text-3xl font-bold text-[color:var(--foreground)]">
-        PicFlow
+      <h1 className="text-3xl font-extrabold tracking-tight text-icc-violet">
+        MediaFlow
       </h1>
-      <p className="text-[color:var(--foreground)] opacity-70 mt-2">
-        Validation de photos simple et rapide
+      <p className="text-gray-700 mt-2">
+        Validation de médias simple et rapide
       </p>
     </div>
   )

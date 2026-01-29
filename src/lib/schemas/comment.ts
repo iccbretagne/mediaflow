@@ -15,7 +15,7 @@ export const CommentTypeEnum = z
 
 export const CommentSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     type: CommentTypeEnum,
     content: z.string(),
     timecode: z.number().int().nullable(),
@@ -23,7 +23,7 @@ export const CommentSchema = z
     authorId: z.string().cuid().nullable(),
     authorName: z.string().nullable(),
     authorImage: z.string().url().nullable(),
-    parentId: z.string().cuid().nullable(),
+    parentId: z.string().cuid2().nullable(),
     replyCount: z.number().int().optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
@@ -44,7 +44,7 @@ export const CreateCommentSchema = z
       .min(0)
       .optional()
       .openapi({ example: 125, description: "Timecode en secondes (vidéos)" }),
-    parentId: z.string().cuid().optional(),
+    parentId: z.string().cuid2().optional(),
   })
   .refine(
     (data) => {
@@ -68,7 +68,7 @@ export const UpdateCommentSchema = z
 
 export const ListCommentsQuerySchema = z
   .object({
-    parentId: z.string().cuid().optional(),
+    parentId: z.string().cuid2().optional(),
     type: CommentTypeEnum.optional(),
   })
   .merge(PaginationQuerySchema)

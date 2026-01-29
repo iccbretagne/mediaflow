@@ -45,7 +45,7 @@ export const UploadResponseSchema = z
   .object({
     uploaded: z.array(
       z.object({
-        id: z.string().cuid(),
+        id: z.string().cuid2(),
         filename: z.string(),
         thumbnailUrl: z.string().url(),
       })

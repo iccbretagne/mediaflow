@@ -65,8 +65,8 @@ export const MediaSchema = z
     width: z.number().int().nullable(),
     height: z.number().int().nullable(),
     duration: z.number().int().nullable(),
-    eventId: z.string().cuid().nullable(),
-    projectId: z.string().cuid().nullable(),
+    eventId: z.string().cuid2().nullable(),
+    projectId: z.string().cuid2().nullable(),
     scheduledDeletionAt: z.string().datetime().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
@@ -81,8 +81,8 @@ export const MediaWithUrlsSchema = MediaSchema.extend({
 export const CreateMediaSchema = z
   .object({
     type: MediaTypeEnum,
-    eventId: z.string().cuid().optional(),
-    projectId: z.string().cuid().optional(),
+    eventId: z.string().cuid2().optional(),
+    projectId: z.string().cuid2().optional(),
   })
   .refine((data) => Boolean(data.eventId) !== Boolean(data.projectId), {
     message: "Exactly one of eventId or projectId must be provided",

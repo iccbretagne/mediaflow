@@ -10,8 +10,8 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  title: "PicFlow - Photo Validation",
-  description: "Photo validation workflow for church media teams",
+  title: "MediaFlow - Media Validation",
+  description: "Media validation workflow for church media teams",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon", // Route dynamique
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "PicFlow",
+    title: "MediaFlow",
   },
 }
 

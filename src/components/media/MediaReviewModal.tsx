@@ -334,7 +334,7 @@ export function MediaReviewModal({
                     value={versionNotes}
                     onChange={(e) => setVersionNotes(e.target.value)}
                     placeholder="Notes de version (optionnel)"
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-900 placeholder:text-gray-500"
                     disabled={versionUploading}
                   />
                   {versionUploading && (
@@ -354,7 +354,7 @@ export function MediaReviewModal({
                     value={revisionComment}
                     onChange={(e) => setRevisionComment(e.target.value)}
                     rows={3}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet/30"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-icc-violet/30"
                     placeholder="Ex: merci de revoir la section 00:35"
                   />
                   <div className="flex gap-2">

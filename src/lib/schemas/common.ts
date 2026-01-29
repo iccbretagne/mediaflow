@@ -48,7 +48,12 @@ export const IdParamSchema = z.object({
   id: z.string().cuid().openapi({ example: "clx1234567890abcdef" }),
 })
 
-// Media IDs are generated in-app and are not Prisma cuid()
+// Entity IDs are generated in-app and use cuid2
+export const Cuid2IdParamSchema = z.object({
+  id: z.string().cuid2().openapi({ example: "cmky7c8c8a8hGF-m6sN8" }),
+})
+
+// Media IDs are generated in-app and use cuid2
 export const MediaIdParamSchema = z.object({
   id: z.string().cuid2().openapi({ example: "cmky7c8c8a8hGF-m6sN8" }),
 })

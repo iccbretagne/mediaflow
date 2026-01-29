@@ -224,7 +224,7 @@ export default function ProjectSharePage({
                   value={formLabel}
                   onChange={(e) => setFormLabel(e.target.value)}
                   placeholder="Ex: Pasteur Martin"
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Pour identifier qui utilise ce lien
@@ -243,7 +243,7 @@ export default function ProjectSharePage({
                   id="expires"
                   value={formExpires}
                   onChange={(e) => setFormExpires(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
                 >
                   <option value="1">1 jour</option>
                   <option value="7">7 jours</option>

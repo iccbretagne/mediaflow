@@ -81,16 +81,16 @@ Lancement avec `NODE_ENV=production` (Next.js le gere automatiquement au build).
 Exemple de service simple pour lancer l'app au boot. Adapter `User`, `WorkingDirectory`, et les chemins.
 
 ```ini
-# /etc/systemd/system/picflow.service
+# /etc/systemd/system/mediaflow.service
 [Unit]
-Description=PicFlow (Next.js)
+Description=MediaFlow (Next.js)
 After=network.target
 
 [Service]
 Type=simple
-User=picflow
-WorkingDirectory=/srv/picflow
-EnvironmentFile=/srv/picflow/.env
+User=mediaflow
+WorkingDirectory=/srv/mediaflow
+EnvironmentFile=/srv/mediaflow/.env
 Environment=NODE_ENV=production
 ExecStart=/usr/bin/npm run start
 Restart=always
@@ -106,15 +106,15 @@ Commandes systemd :
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable picflow
-sudo systemctl start picflow
-sudo systemctl status picflow
+sudo systemctl enable mediaflow
+sudo systemctl start mediaflow
+sudo systemctl status mediaflow
 ```
 
 Logs :
 
 ```bash
-journalctl -u picflow -f
+journalctl -u mediaflow -f
 ```
 
 ## 5) OAuth Google

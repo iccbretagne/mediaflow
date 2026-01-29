@@ -1,19 +1,19 @@
-# PicFlow — Guide Utilisateur
+# MediaFlow — Guide Utilisateur
 
-Ce guide explique comment utiliser PicFlow selon votre rôle.
+Ce guide explique comment utiliser MediaFlow selon votre rôle.
 
 ---
 
 ## 1. Validateur (Pasteur / Responsable)
 
-Vous recevez un lien de validation par email ou message. Ce lien vous donne accès à la page de validation des photos.
+Vous recevez un lien de validation par email ou message. Ce lien vous donne accès à la page de validation des médias.
 
-### Accéder aux photos
+### Accéder aux médias
 
-1. Cliquez sur le lien reçu (format : `https://picflow.exemple.com/v/xxxxx`)
-2. La page s'ouvre avec les photos à valider
+1. Cliquez sur le lien reçu (format : `https://mediaflow.exemple.com/v/xxxxx`)
+2. La page s'ouvre avec les médias à valider
 
-### Valider les photos (Mobile)
+### Valider les médias (Mobile)
 
 **Mode Swipe :**
 - Glissez vers la **droite** pour **approuver**
@@ -25,7 +25,7 @@ Vous recevez un lien de validation par email ou message. Ce lien vous donne acc�
 - Utilisez les filtres en haut : Toutes / Validées / Rejetées
 - Appuyez longuement pour zoomer
 
-### Valider les photos (Desktop)
+### Valider les médias (Desktop)
 
 - Cliquez sur une miniature pour la sélectionner
 - Utilisez les boutons ou les raccourcis clavier :
@@ -36,8 +36,8 @@ Vous recevez un lien de validation par email ou message. Ce lien vous donne acc�
 ### Modifier vos choix
 
 Vous pouvez changer d'avis à tout moment :
-- Une photo approuvée peut être rejetée
-- Une photo rejetée peut être approuvée
+- Un média approuvé peut être rejeté
+- Un média rejeté peut être approuvé
 
 Les changements sont enregistrés automatiquement.
 
@@ -47,20 +47,20 @@ Les changements sont enregistrés automatiquement.
 
 Vous recevez un lien de téléchargement par email ou message.
 
-### Accéder aux photos validées
+### Accéder aux médias validés
 
-1. Cliquez sur le lien reçu (format : `https://picflow.exemple.com/d/xxxxx`)
-2. Seules les photos **validées** sont affichées
+1. Cliquez sur le lien reçu (format : `https://mediaflow.exemple.com/d/xxxxx`)
+2. Seuls les médias **validés** sont affichés
 
-### Télécharger les photos
+### Télécharger les médias
 
 **Photo individuelle :**
 - Cliquez sur une miniature pour l'agrandir
 - Cliquez sur le bouton de téléchargement
 
-**Toutes les photos (ZIP) :**
+**Tous les médias (ZIP) :**
 - Cliquez sur le bouton "Télécharger tout (ZIP)"
-- Un fichier ZIP contenant toutes les photos HD sera téléchargé
+- Un fichier ZIP contenant tous les médias HD sera téléchargé
 
 ---
 
@@ -70,7 +70,7 @@ Vous avez un compte Google autorisé pour accéder à l'interface d'administrati
 
 ### Connexion
 
-1. Accédez à `https://picflow.exemple.com`
+1. Accédez à `https://mediaflow.exemple.com`
 2. Cliquez sur "Se connecter avec Google"
 3. Si c'est votre première connexion, votre compte sera en attente d'approbation
 
@@ -79,7 +79,7 @@ Vous avez un compte Google autorisé pour accéder à l'interface d'administrati
 Le tableau de bord affiche tous les événements avec :
 - Nom et date
 - Église associée
-- Nombre de photos (en attente / validées / rejetées)
+- Nombre de médias (en attente / validés / rejetés)
 - Statut de l'événement
 
 **Filtres disponibles :**
@@ -96,13 +96,13 @@ Le tableau de bord affiche tous les événements avec :
    - Description (optionnel)
 3. Cliquez sur "Créer"
 
-### Uploader des photos
+### Uploader des médias
 
 1. Ouvrez un événement
-2. Glissez-déposez vos photos dans la zone d'upload
+2. Glissez-déposez vos médias dans la zone d'upload
 3. Ou cliquez pour sélectionner des fichiers
 
-**Formats supportés :** JPEG, PNG, WebP (jusqu'à 50 Mo par photo)
+**Formats supportés :** JPEG, PNG, WebP, PDF, SVG, MP4, MOV (jusqu'à 500 Mo par média)
 
 ### Générer un lien de partage
 
@@ -111,7 +111,7 @@ Le tableau de bord affiche tous les événements avec :
 3. Cliquez sur "Nouveau lien"
 4. Choisissez le type :
    - **Validateur** : pour les pasteurs/responsables
-   - **Média** : pour l'équipe média (photos validées uniquement)
+   - **Média** : pour l'équipe média (médias validés uniquement)
 5. Optionnel : ajoutez un label et une date d'expiration
 6. Copiez le lien généré et envoyez-le
 
@@ -157,7 +157,7 @@ Menu **Paramètres** :
 
 ### Comment annuler une validation ?
 
-- Revenez sur la photo
+- Revenez sur le média
 - Changez simplement son statut (les transitions sont réversibles)
 
 ---

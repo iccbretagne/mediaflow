@@ -1,6 +1,6 @@
-# Conception Technique - PicFlow
+# Conception Technique - MediaFlow
 
-> Dépôt : github.com/iccbretagne/picflow
+> Dépôt : github.com/iccbretagne/mediaflow
 > Licence : MIT
 
 **Documents liés :**
@@ -593,13 +593,13 @@ const generator = new OpenApiGeneratorV3(registry.definitions)
 export const openApiDocument = generator.generateDocument({
   openapi: "3.0.3",
   info: {
-    title: "PicFlow API",
+    title: "MediaFlow API",
     version: "1.0.0",
-    description: "API de gestion de workflow de validation de photos",
+    description: "API de gestion de workflow de validation de médias",
     license: { name: "MIT", url: "https://opensource.org/licenses/MIT" },
   },
   servers: [
-    { url: "https://picflow.example.com", description: "Production" },
+    { url: "https://mediaflow.example.com", description: "Production" },
     { url: "http://localhost:3000", description: "Développement" },
   ],
   tags: [
@@ -804,7 +804,7 @@ export async function POST(request: NextRequest) {
 ## 3. Structure du Projet
 
 ```
-picflow/
+mediaflow/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml              # Tests + lint
@@ -1253,8 +1253,8 @@ interface PhotoUploaderProps {
 ```json
 // public/manifest.json
 {
-  "name": "PicFlow",
-  "short_name": "PicFlow",
+  "name": "MediaFlow",
+  "short_name": "MediaFlow",
   "description": "Photo validation workflow",
   "start_url": "/",
   "display": "standalone",
@@ -1285,10 +1285,10 @@ interface PhotoUploaderProps {
 # .env.example
 
 # Base de données
-DATABASE_URL="mysql://user:password@localhost:3306/picflow"
+DATABASE_URL="mysql://user:password@localhost:3306/mediaflow"
 
 # NextAuth
-NEXTAUTH_URL="https://picflow.example.com"
+NEXTAUTH_URL="https://mediaflow.example.com"
 NEXTAUTH_SECRET="générer-avec-openssl-rand-base64-32"
 
 # Google OAuth
@@ -1298,12 +1298,12 @@ GOOGLE_CLIENT_SECRET="xxx"
 # OVH Object Storage (S3)
 S3_ENDPOINT="https://s3.gra.io.cloud.ovh.net"
 S3_REGION="gra"
-S3_BUCKET="picflow"
+S3_BUCKET="mediaflow"
 S3_ACCESS_KEY_ID="xxx"
 S3_SECRET_ACCESS_KEY="xxx"
 
 # Application
-APP_URL="https://picflow.example.com"
+APP_URL="https://mediaflow.example.com"
 ```
 
 ---
@@ -1345,23 +1345,23 @@ echo "Pulling latest changes..."
 git pull origin main
 
 echo "Building Docker image..."
-docker build -t picflow:latest .
+docker build -t mediaflow:latest .
 
 echo "Running migrations..."
-docker run --rm --env-file .env picflow:latest npx prisma migrate deploy
+docker run --rm --env-file .env mediaflow:latest npx prisma migrate deploy
 
 echo "Restarting container..."
-docker stop picflow || true
-docker rm picflow || true
+docker stop mediaflow || true
+docker rm mediaflow || true
 docker run -d \
-  --name picflow \
+  --name mediaflow \
   --env-file .env \
   --network web \
   -l "traefik.enable=true" \
-  -l "traefik.http.routers.picflow.rule=Host(\`picflow.example.com\`)" \
-  -l "traefik.http.routers.picflow.tls=true" \
-  -l "traefik.http.routers.picflow.tls.certresolver=letsencrypt" \
-  picflow:latest
+  -l "traefik.http.routers.mediaflow.rule=Host(\`mediaflow.example.com\`)" \
+  -l "traefik.http.routers.mediaflow.tls=true" \
+  -l "traefik.http.routers.mediaflow.tls.certresolver=letsencrypt" \
+  mediaflow:latest
 
 echo "Done!"
 ```

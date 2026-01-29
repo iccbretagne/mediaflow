@@ -6,7 +6,7 @@ import { z } from "zod"
 
 export const MediaVersionSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     versionNumber: z.number().int().min(1),
     mediaId: z.string().cuid2(),
     thumbnailUrl: z.string().url(),

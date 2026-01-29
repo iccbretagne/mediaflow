@@ -1,4 +1,4 @@
-# PicFlow — Workflows de validation
+# MediaFlow — Workflows de validation
 
 ## 1. Workflow actuel : Photos
 

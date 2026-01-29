@@ -21,7 +21,7 @@ export function HeaderLogo() {
     <Link href="/dashboard" className="flex items-center gap-2">
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="PicFlow" className="h-8 object-contain" />
+        <img src={logoUrl} alt="MediaFlow" className="h-8 object-contain" />
       ) : (
         <>
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -39,7 +39,7 @@ export function HeaderLogo() {
               />
             </svg>
           </div>
-          <span className="font-semibold text-gray-900">PicFlow</span>
+          <span className="font-semibold text-gray-900">MediaFlow</span>
         </>
       )}
     </Link>

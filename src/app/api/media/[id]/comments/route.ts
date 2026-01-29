@@ -13,6 +13,7 @@ import {
 import { MediaIdParamSchema } from "@/lib/schemas"
 import { CreateCommentSchema, ListCommentsQuerySchema } from "@/lib/schemas/comment"
 import { validateShareToken } from "@/lib/tokens"
+import { createId } from "@paralleldrive/cuid2"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -189,6 +190,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const comment = await prisma.comment.create({
       data: {
+        id: createId(),
         content: body.content,
         type: body.type,
         timecode: body.timecode ?? null,

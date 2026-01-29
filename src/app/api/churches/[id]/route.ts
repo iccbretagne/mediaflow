@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requirePermission } from "@/lib/auth"
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
-import { UpdateChurchSchema } from "@/lib/schemas"
+import { successResponse, errorResponse, ApiError, validateParams } from "@/lib/api-utils"
+import { UpdateChurchSchema, Cuid2IdParamSchema } from "@/lib/schemas"
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -11,7 +11,7 @@ type RouteParams = {
 // GET /api/churches/[id] - Récupérer une église
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     const church = await prisma.church.findUnique({
       where: { id },
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     await requirePermission("churches:manage")
-    const { id } = await params
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     const body = await request.json()
     const validated = UpdateChurchSchema.parse(body)
@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     await requirePermission("churches:manage")
-    const { id } = await params
+    const { id } = validateParams(await params, Cuid2IdParamSchema)
 
     // Vérifier si l'église a des événements
     const church = await prisma.church.findUnique({

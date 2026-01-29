@@ -20,6 +20,7 @@ import { createUploadSession, checkRateLimit, deleteUploadSession, getUploadSess
 import { getSignedPutUrl, getQuarantineKey, getVersionOriginalKey, getVersionThumbnailKey, uploadFile, getSignedThumbnailUrl, getSignedOriginalUrl, fileExists, getFileHead, getFileBytes, deleteFile, moveFile } from "@/lib/s3"
 import { validateMagicBytes } from "@/lib/magic-bytes"
 import { generateThumbnail } from "@/lib/sharp"
+import { createId } from "@paralleldrive/cuid2"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -224,6 +225,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const version = await prisma.mediaVersion.create({
       data: {
+        id: createId(),
         mediaId: media.id,
         versionNumber: nextVersion,
         originalKey,

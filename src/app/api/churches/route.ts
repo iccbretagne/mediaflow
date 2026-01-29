@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requirePermission } from "@/lib/auth"
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils"
 import { CreateChurchSchema } from "@/lib/schemas"
+import { createId } from "@paralleldrive/cuid2"
 
 // GET /api/churches - Liste toutes les églises
 export async function GET() {
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     const church = await prisma.church.create({
       data: {
+        id: createId(),
         name: validated.name,
         address: validated.address || null,
       },

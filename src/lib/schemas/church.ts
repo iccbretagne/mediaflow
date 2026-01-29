@@ -9,7 +9,7 @@ extendZodWithOpenApi(z)
 
 export const ChurchSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     name: z.string().min(1).max(255),
     address: z.string().max(500).nullable(),
     createdAt: z.date(),
@@ -33,7 +33,7 @@ export const UpdateChurchSchema = z
 
 export const ChurchResponseSchema = z
   .object({
-    id: z.string(),
+    id: z.string().cuid2(),
     name: z.string(),
     address: z.string().nullable(),
     createdAt: z.string(), // ISO date string

@@ -19,7 +19,7 @@ export const CreateEventSchema = z
   .object({
     name: z.string().min(1).max(255).openapi({ example: "Culte du 19 janvier" }),
     date: z.string().datetime().openapi({ example: "2025-01-19T10:00:00Z" }),
-    churchId: z.string().cuid().openapi({ example: "clxxx..." }),
+    churchId: z.string().cuid2().openapi({ example: "cmky7c8c8a8hGF-m6sN8" }),
     description: z
       .string()
       .max(1000)
@@ -37,7 +37,7 @@ export const UpdateEventSchema = CreateEventSchema.partial()
 export const ListEventsQuerySchema = z
   .object({
     status: EventStatusEnum.optional(),
-    churchId: z.string().cuid().optional(),
+    churchId: z.string().cuid2().optional(),
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),
   })
@@ -46,10 +46,10 @@ export const ListEventsQuerySchema = z
 
 export const EventSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     name: z.string(),
     date: z.string().datetime(),
-    churchId: z.string().cuid(),
+    churchId: z.string().cuid2(),
     church: z.string(), // Nom de l'église (pour affichage)
     description: z.string().nullable(),
     status: EventStatusEnum,
@@ -89,7 +89,7 @@ export const CreateShareTokenSchema = z
 
 export const ShareTokenResponseSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     token: z.string(),
     url: z.string().url(),
     type: TokenTypeEnum,

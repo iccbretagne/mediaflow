@@ -1,8 +1,8 @@
-# PicFlow — Extension Média & Workflow Révision
+# MediaFlow — Extension Média & Workflow Révision
 
 ## Résumé
 
-Étendre PicFlow pour supporter les visuels (PNG, SVG, PDF), les vidéos (MP4, MOV jusqu'à 500 Mo) et un workflow de révision/commentaires, en plus du flux photo existant (swipe approve/reject) qui reste inchangé.
+Étendre MediaFlow pour supporter les visuels (PNG, SVG, PDF), les vidéos (MP4, MOV jusqu'à 500 Mo) et un workflow de révision/commentaires, en plus du flux photo existant (swipe approve/reject) qui reste inchangé.
 
 ---
 

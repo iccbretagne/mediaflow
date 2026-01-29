@@ -48,7 +48,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all duration-200 bg-white ${
-            isPlaceholder ? "text-gray-500" : "text-gray-900"
+            isPlaceholder ? "text-gray-600" : "text-gray-900"
           }
             ${
               error

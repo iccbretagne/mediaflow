@@ -10,6 +10,7 @@ import {
   getPaginationParams,
 } from "@/lib/api-utils"
 import { CreateProjectSchema, ListProjectsQuerySchema } from "@/lib/schemas"
+import { createId } from "@paralleldrive/cuid2"
 
 // GET /api/projects - List projects
 export async function GET(request: NextRequest) {
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
 
     const project = await prisma.project.create({
       data: {
+        id: createId(),
         name: body.name,
         churchId: body.churchId,
         description: body.description,

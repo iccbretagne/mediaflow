@@ -10,6 +10,7 @@ import {
   getPaginationParams,
 } from "@/lib/api-utils"
 import { CreateEventSchema, ListEventsQuerySchema } from "@/lib/schemas"
+import { createId } from "@paralleldrive/cuid2"
 
 // GET /api/events - List events
 // All authenticated users can see all events
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
 
     const event = await prisma.event.create({
       data: {
+        id: createId(),
         name: body.name,
         date: new Date(body.date),
         churchId: body.churchId,

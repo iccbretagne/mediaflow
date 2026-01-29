@@ -24,8 +24,8 @@ export const RequestPresignedUrlSchema = z
       .max(MAX_FILE_SIZE)
       .openapi({ example: 104857600, description: "File size in bytes (max 500 MB)" }),
     type: MediaTypeEnum.openapi({ example: "VIDEO" }),
-    eventId: z.string().cuid().optional(),
-    projectId: z.string().cuid().optional(),
+    eventId: z.string().cuid2().optional(),
+    projectId: z.string().cuid2().optional(),
   })
   .refine((data) => Boolean(data.eventId) !== Boolean(data.projectId), {
     message: "Exactly one of eventId or projectId must be provided",
@@ -74,7 +74,7 @@ export const ConfirmUploadSchema = z
 
 export const ConfirmUploadResponseSchema = z
   .object({
-    id: z.string().cuid(),
+    id: z.string().cuid2(),
     type: MediaTypeEnum,
     filename: z.string(),
     thumbnailUrl: z.string().url(),

@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
 
           await tx.mediaVersion.create({
             data: {
+              id: createId(),
               mediaId,
               versionNumber: 1,
               originalKey,
