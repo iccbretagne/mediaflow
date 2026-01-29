@@ -10,6 +10,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Breaking Changes
 - Media IDs now use cuid2 only; legacy media IDs are no longer accepted by the API.
 - Event photos are now stored in Media (type=PHOTO) with versioning; Photo table is no longer used for event flows.
+- DB reset required if you have existing data before v0.2.0-rc.1.
 
 ### Added
 - Media extension foundation (visuals/videos) and projects CRUD.
