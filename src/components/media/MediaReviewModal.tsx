@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Badge, Button } from "@/components/ui"
 import { CommentThread } from "./CommentThread"
 
@@ -89,6 +89,8 @@ export function MediaReviewModal({
   const [versionUploading, setVersionUploading] = useState(false)
   const [versionProgress, setVersionProgress] = useState(0)
   const [versionNotes, setVersionNotes] = useState("")
+  const [versionFileName, setVersionFileName] = useState<string | null>(null)
+  const versionFileRef = useRef<HTMLInputElement>(null)
 
   async function updateStatus(status: MediaStatus) {
     if (status === "REVISION_REQUESTED" && !revisionComment.trim()) {
@@ -322,16 +324,30 @@ export function MediaReviewModal({
                       Nouvelle version
                     </label>
                     <input
+                      ref={versionFileRef}
                       type="file"
+                      className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
+                          setVersionFileName(file.name)
                           void uploadNewVersion(file)
                         }
                         e.currentTarget.value = ""
                       }}
                       disabled={versionUploading}
                     />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => versionFileRef.current?.click()}
+                      disabled={versionUploading}
+                    >
+                      Parcourir
+                    </Button>
+                    <span className="text-sm text-gray-900">
+                      {versionFileName || "Aucun fichier sélectionné"}
+                    </span>
                   </div>
                   <input
                     type="text"
