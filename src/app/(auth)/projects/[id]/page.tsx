@@ -112,10 +112,9 @@ export default async function ProjectDetailPage({
         status: media.status,
         filename: media.filename,
         thumbnailUrl: await getSignedThumbnailUrl(latestVersion.thumbnailKey),
-        originalUrl:
-          media.type === "VIDEO"
-            ? await getSignedOriginalUrl(latestVersion.originalKey)
-            : undefined,
+        ...(media.type === "VIDEO"
+          ? { originalUrl: await getSignedOriginalUrl(latestVersion.originalKey) }
+          : {}),
       }
     })
   )

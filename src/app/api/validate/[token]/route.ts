@@ -126,10 +126,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           type: media.type,
           filename: media.filename,
           thumbnailUrl: await getSignedThumbnailUrl(latestVersion.thumbnailKey),
-          originalUrl:
-            media.type === "VIDEO"
-              ? await getSignedOriginalUrl(latestVersion.originalKey)
-              : undefined,
+          ...(media.type === "VIDEO"
+            ? { originalUrl: await getSignedOriginalUrl(latestVersion.originalKey) }
+            : {}),
           status: normalizeMediaStatus(media.status),
           width: media.width,
           height: media.height,
@@ -139,7 +138,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })
     )
 
-    const photos = mediaWithUrls.filter(isValidationItem)
+    const photos = mediaWithUrls.filter((item): item is NonNullable<typeof item> => item !== null)
     const stats = {
       total: photos.length,
       pending: photos.filter((p) => p.status === "PENDING").length,

@@ -7,7 +7,6 @@ interface Photo {
   filename: string
   thumbnailUrl: string
   status: PhotoStatus
-  uploadedAt: Date
 }
 
 interface PhotoGridProps {
