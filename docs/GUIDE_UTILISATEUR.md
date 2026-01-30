@@ -13,33 +13,46 @@ Vous recevez un lien de validation par email ou message. Ce lien vous donne acc�
 1. Cliquez sur le lien reçu (format : `https://mediaflow.exemple.com/v/xxxxx`)
 2. La page s'ouvre avec les médias à valider
 
-### Valider les médias (Mobile)
+### Valider les photos (Mode Swipe)
 
-**Mode Swipe :**
-- Glissez vers la **droite** pour **approuver**
-- Glissez vers la **gauche** pour **rejeter**
-- Utilisez les boutons **✓** et **✗** si vous préférez
+Les photos se présentent une par une :
 
-**Mode Grille :**
-- Touchez une miniature pour basculer son statut
-- Utilisez les filtres en haut : Toutes / Validées / Rejetées
-- Appuyez longuement pour zoomer
+- Glissez vers la **droite** (ou bouton **✓**) pour **approuver**
+- Glissez vers la **gauche** (ou bouton **✗**) pour **rejeter**
+- Bouton **Passer** pour passer au média suivant sans décision
+- Utilisez les flèches **‹ ›** en haut pour naviguer librement entre les médias
 
-### Valider les médias (Desktop)
+**Raccourcis clavier (desktop) :**
+- `V` ou `→` : Approuver
+- `X` ou `←` : Rejeter
+- `Espace` : Passer
 
-- Cliquez sur une miniature pour la sélectionner
-- Utilisez les boutons ou les raccourcis clavier :
-  - `V` ou `→` : Valider
-  - `X` ou `←` : Rejeter
-  - `Espace` : Passer à la suivante
+### Valider les visuels et vidéos
+
+Les visuels (PNG, JPEG, SVG, PDF) et vidéos (MP4, MOV, WebM) suivent un workflow enrichi :
+
+- **Approuver** ou **Rejeter** comme pour les photos
+- **Demander une révision** : appuyez sur le bouton jaune **Rev** et saisissez un commentaire décrivant les modifications souhaitées (le commentaire est obligatoire)
+
+Les vidéos sont lues directement dans l'interface avec les contrôles de lecture.
+
+### Récapitulatif
+
+Après avoir parcouru tous les médias, un récap s'affiche :
+
+- Vue en grille de tous les médias avec leur statut (✓ vert, ✗ rouge, ! jaune)
+- Filtrez par statut : Toutes / Validées / Rejetées / Révision demandée
+- Touchez une miniature pour modifier votre choix
+- **Bouton Confirmer** (photos uniquement) : valide définitivement vos décisions sur les photos
+- Bouton **Retour** : revenez au premier média non traité pour refaire un tour
+
+> **Note :** Les visuels et vidéos sont validés individuellement au moment du swipe. Le bouton Confirmer ne concerne que les photos.
 
 ### Modifier vos choix
 
 Vous pouvez changer d'avis à tout moment :
-- Un média approuvé peut être rejeté
-- Un média rejeté peut être approuvé
-
-Les changements sont enregistrés automatiquement.
+- Utilisez les flèches ‹ › pour revenir sur un média
+- Depuis le récap, touchez une miniature pour basculer son statut
 
 ---
 
@@ -54,7 +67,7 @@ Vous recevez un lien de téléchargement par email ou message.
 
 ### Télécharger les médias
 
-**Photo individuelle :**
+**Média individuel :**
 - Cliquez sur une miniature pour l'agrandir
 - Cliquez sur le bouton de téléchargement
 
@@ -64,7 +77,7 @@ Vous recevez un lien de téléchargement par email ou message.
 
 ---
 
-## 3. Administrateur (Équipe Photo)
+## 3. Administrateur
 
 Vous avez un compte Google autorisé pour accéder à l'interface d'administration.
 
@@ -86,28 +99,60 @@ Le tableau de bord affiche tous les événements avec :
 - Par statut (Brouillon, En attente, Validé, Archivé)
 - Par église
 
-### Créer un événement
+### Événements (Photos)
 
+Les événements sont dédiés à la gestion de photos (cultes, conférences, etc.).
+
+**Créer un événement :**
 1. Cliquez sur "Nouvel événement"
-2. Renseignez :
-   - Nom de l'événement
-   - Date
-   - Église (sélectionner dans la liste)
-   - Description (optionnel)
+2. Renseignez le nom, la date, l'église et une description (optionnel)
 3. Cliquez sur "Créer"
 
-### Uploader des médias
-
+**Uploader des photos :**
 1. Ouvrez un événement
-2. Glissez-déposez vos médias dans la zone d'upload
-3. Ou cliquez pour sélectionner des fichiers
+2. Glissez-déposez vos photos ou cliquez sur "Parcourir"
+3. Formats : JPEG, PNG, WebP
 
-**Formats supportés :** JPEG, PNG, WebP, PDF, SVG, MP4, MOV (jusqu'à 500 Mo par média)
+### Projets (Visuels & Vidéos)
+
+Les projets sont dédiés aux visuels et vidéos avec un workflow de révision.
+
+**Créer un projet :**
+1. Cliquez sur "Nouveau projet"
+2. Renseignez le nom, l'église et une description (optionnel)
+3. Cliquez sur "Créer"
+
+**Uploader des médias :**
+1. Ouvrez un projet
+2. Glissez-déposez vos fichiers ou cliquez sur "Parcourir"
+3. Formats visuels : PNG, JPEG, SVG, PDF
+4. Formats vidéos : MP4, MOV, WebM (max 1 Go par fichier)
+
+**Workflow de révision :**
+
+Les visuels et vidéos passent par un workflow de statuts :
+
+| Statut | Description |
+|--------|-------------|
+| Brouillon | Média uploadé, pas encore soumis |
+| En cours de revue | Soumis pour validation |
+| Révision demandée | Le validateur demande des modifications (avec commentaire) |
+| Approuvé | Validé définitivement |
+| Rejeté | Refusé |
+
+**Soumettre une nouvelle version :**
+
+Quand une révision est demandée :
+1. Ouvrez le média dans la modale de revue
+2. Consultez le commentaire du validateur
+3. Cliquez sur "Parcourir" dans la section "Nouvelle version"
+4. Ajoutez des notes de version (optionnel)
+5. Uploadez le fichier corrigé
 
 ### Générer un lien de partage
 
-1. Ouvrez un événement
-2. Allez dans l'onglet "Partage"
+1. Ouvrez un événement ou projet
+2. Allez dans la section "Partage"
 3. Cliquez sur "Nouveau lien"
 4. Choisissez le type :
    - **Validateur** : pour les pasteurs/responsables
@@ -120,7 +165,7 @@ Le tableau de bord affiche tous les événements avec :
 Menu **Églises** :
 - Ajouter une nouvelle église
 - Modifier le nom ou l'adresse
-- Supprimer (si aucun événement associé)
+- Supprimer (si aucun événement/projet associé)
 
 ### Gérer les utilisateurs
 
@@ -149,7 +194,7 @@ Menu **Paramètres** :
 - Votre compte est peut-être en attente d'approbation
 - Contactez un administrateur
 
-### Les photos ne s'affichent pas ?
+### Les médias ne s'affichent pas ?
 
 - Vérifiez votre connexion internet
 - Essayez de rafraîchir la page
@@ -157,8 +202,17 @@ Menu **Paramètres** :
 
 ### Comment annuler une validation ?
 
-- Revenez sur le média
+- Revenez sur le média concerné
 - Changez simplement son statut (les transitions sont réversibles)
+
+### Le commentaire est obligatoire pour une révision ?
+
+Oui, quand vous demandez une révision sur un visuel ou une vidéo, vous devez saisir un commentaire expliquant les modifications souhaitées.
+
+### Quelle taille maximale pour les fichiers ?
+
+- Photos et visuels : 50 Mo par fichier
+- Vidéos : 1 Go par fichier (configurable par l'administrateur)
 
 ---
 
