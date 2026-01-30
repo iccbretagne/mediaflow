@@ -2,6 +2,28 @@
 
 Ce guide explique comment utiliser MediaFlow selon votre rôle.
 
+## Sommaire
+
+- [1. Validateur (Pasteur / Responsable)](#1-validateur-pasteur--responsable)
+  - [Accéder aux médias](#accéder-aux-médias)
+  - [Valider les photos (Mode Swipe)](#valider-les-photos-mode-swipe)
+  - [Valider les visuels et vidéos](#valider-les-visuels-et-vidéos)
+  - [Récapitulatif](#récapitulatif)
+  - [Modifier vos choix](#modifier-vos-choix)
+- [2. Équipe Média (Téléchargement)](#2-équipe-média-téléchargement)
+  - [Accéder aux médias validés](#accéder-aux-médias-validés)
+  - [Télécharger les médias](#télécharger-les-médias)
+- [3. Administrateur](#3-administrateur)
+  - [Connexion](#connexion)
+  - [Dashboard](#dashboard)
+  - [Événements (Photos)](#événements-photos)
+  - [Projets (Visuels & Vidéos)](#projets-visuels--vidéos)
+  - [Générer un lien de partage](#générer-un-lien-de-partage)
+  - [Gérer les églises](#gérer-les-églises)
+  - [Gérer les utilisateurs](#gérer-les-utilisateurs)
+  - [Personnalisation](#personnalisation)
+- [Questions fréquentes](#questions-fréquentes)
+
 ---
 
 ## 1. Validateur (Pasteur / Responsable)
