@@ -226,6 +226,42 @@ npx prisma migrate dev
 npm run dev
 ```
 
+## Versioning et releases
+
+### Convention de version
+
+Le projet suit le [Semantic Versioning](https://semver.org/) : `MAJOR.MINOR.PATCH[-prerelease]`
+
+- `0.2.0-rc.7` → release candidate 7 de la version 0.2.0
+- `0.2.0` → version stable 0.2.0
+- `0.3.0` → prochaine version mineure
+
+### Source de vérité
+
+La version dans `package.json` est la source unique. Le footer admin la lit dynamiquement.
+
+### Publier une nouvelle version
+
+```bash
+# Release candidate
+npm version 0.2.0-rc.8
+
+# Version stable
+npm version 0.2.0
+
+# Pousser le commit + tag
+git push --follow-tags
+```
+
+`npm version` fait automatiquement :
+1. Met à jour `version` dans `package.json`
+2. Crée un commit `v0.2.0-rc.8`
+3. Crée le tag Git `v0.2.0-rc.8`
+
+### Check CI
+
+Le workflow GitHub Actions (`ci.yml`) inclut un job `check-version` qui se déclenche sur les push de tags `v*`. Il vérifie que le tag correspond à la version dans `package.json` et échoue en cas d'incohérence.
+
 ## Documentation
 
 ### Technique

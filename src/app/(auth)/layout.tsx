@@ -1,3 +1,4 @@
+import pkg from "@/../package.json"
 import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
@@ -130,6 +131,20 @@ export default async function AuthLayout({
 
         {/* Main content */}
         <main>{children}</main>
+
+        {/* Footer */}
+        <footer className="py-4 text-center text-xs text-gray-400">
+          <a
+            href="https://github.com/iccbretagne/mediaflow"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-600 transition-colors"
+          >
+            MediaFlow
+          </a>
+          {" "}
+          <span>v{pkg.version}</span>
+        </footer>
       </div>
     </PermissionProvider>
   )
