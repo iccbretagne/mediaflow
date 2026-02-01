@@ -3,7 +3,7 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { Card, CardContent, CardHeader, Badge } from "@/components/ui"
-import { ProjectActions } from "@/components/projects"
+import { ProjectActions, ProjectEditForm } from "@/components/projects"
 import { MediaUploader, MediaReviewGrid } from "@/components/media"
 import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
@@ -146,25 +146,16 @@ export default async function ProjectDetailPage({
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-icc-violet">{project.name}</h1>
-            <Badge variant="info">Projet</Badge>
-          </div>
-          <p className="text-gray-700 font-medium">{project.church.name}</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Créé le{" "}
-            {new Date(project.createdAt).toLocaleDateString("fr-FR", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          {project.description && (
-            <p className="text-gray-700 mt-3">{project.description}</p>
-          )}
-        </div>
+        <ProjectEditForm
+          project={{
+            id: project.id,
+            name: project.name,
+            churchId: project.churchId,
+            churchName: project.church.name,
+            description: project.description,
+            createdAt: project.createdAt.toISOString(),
+          }}
+        />
 
         <ProjectActions projectId={project.id} projectName={project.name} />
       </div>

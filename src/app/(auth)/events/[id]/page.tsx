@@ -6,7 +6,7 @@ import { getSignedThumbnailUrl } from "@/lib/s3"
 import { Card, CardContent, CardHeader, Button, Badge } from "@/components/ui"
 import { PhotoUploader } from "@/components/photos/PhotoUploader"
 import { PhotoGrid } from "@/components/photos/PhotoGrid"
-import { EventActions } from "@/components/events"
+import { EventActions, EventEditForm } from "@/components/events"
 
 type EventStatus = "DRAFT" | "PENDING_REVIEW" | "REVIEWED" | "ARCHIVED"
 type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED"
@@ -131,28 +131,17 @@ export default async function EventDetailPage({
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-icc-violet">{event.name}</h1>
-            <Badge variant={statusConfig[event.status as EventStatus].variant}>
-              {statusConfig[event.status as EventStatus].label}
-            </Badge>
-          </div>
-          <p className="text-gray-700 font-medium">{event.church.name}</p>
-          <p className="text-sm text-gray-600 mt-1">
-            {new Date(event.date).toLocaleDateString("fr-FR", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-          {event.description && (
-            <p className="text-gray-700 mt-3">{event.description}</p>
-          )}
-        </div>
+        <EventEditForm
+          event={{
+            id: event.id,
+            name: event.name,
+            date: event.date.toISOString(),
+            churchId: event.churchId,
+            churchName: event.church.name,
+            description: event.description,
+            status: event.status as EventStatus,
+          }}
+        />
 
         <EventActions eventId={event.id} eventName={event.name} />
       </div>

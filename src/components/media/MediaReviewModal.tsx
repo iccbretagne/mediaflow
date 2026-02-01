@@ -131,6 +131,10 @@ export function MediaReviewModal({
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d")
       const objectUrl = URL.createObjectURL(file)
+      if (!objectUrl.startsWith("blob:")) {
+        reject(new Error("Invalid object URL"))
+        return
+      }
 
       video.preload = "metadata"
       video.muted = true
@@ -164,8 +168,7 @@ export function MediaReviewModal({
         reject(new Error("Could not load video"))
       }
 
-      // Safe: objectUrl is a blob URL from a user-selected File, not user-controlled string
-      video.src = objectUrl // lgtm[js/xss-through-dom]
+      video.src = objectUrl
       video.load()
     })
   }

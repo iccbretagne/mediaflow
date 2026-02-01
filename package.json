@@ -34,7 +34,8 @@
   },
   "overrides": {
     "hono": "^4.11.7",
-    "lodash": "^4.17.23"
+    "lodash": "^4.17.23",
+    "fast-xml-parser": "^5.3.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

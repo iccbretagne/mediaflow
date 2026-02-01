@@ -63,6 +63,10 @@ async function extractVideoThumbnail(file: File): Promise<string> {
     }
 
     const objectUrl = URL.createObjectURL(file)
+    if (!objectUrl.startsWith("blob:")) {
+      reject(new Error("Invalid object URL"))
+      return
+    }
 
     video.onseeked = () => {
       canvas.width = video.videoWidth
@@ -79,8 +83,7 @@ async function extractVideoThumbnail(file: File): Promise<string> {
       reject(new Error("Could not load video"))
     }
 
-    // Safe: objectUrl is a blob URL from a user-selected File, not user-controlled string
-    video.src = objectUrl // lgtm[js/xss-through-dom]
+    video.src = objectUrl
   })
 }
 

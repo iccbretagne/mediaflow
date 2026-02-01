@@ -19,12 +19,13 @@ export interface ProcessedImage {
 // ALLOWED MIME TYPES
 // ============================================
 
+// Note: HEIC/HEIF (iPhone) non supporté — sharp n'inclut pas le décodeur H.265
+// pour des raisons de licence. L'ajout nécessiterait heic-convert ou une compilation
+// custom de libvips avec libde265. Voir STATUS.md pour plus de détails.
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
-  "image/heic",
-  "image/heif",
 ]
 
 export const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
@@ -157,8 +158,6 @@ export function getExtensionFromMimeType(mimeType: string): string {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
-    "image/heic": "heic",
-    "image/heif": "heif",
   }
   return extensions[mimeType] || "jpg"
 }

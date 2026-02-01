@@ -172,7 +172,7 @@ export function PhotoUploader({ eventId }: PhotoUploaderProps) {
               </Button>
             </label>
             <p className="text-xs text-gray-400 mt-4">
-              JPEG, PNG ou WebP • Max 20 Mo par photo
+              JPEG, PNG ou WebP • Max 50 Mo par photo
             </p>
           </>
         )}

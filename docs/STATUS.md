@@ -59,8 +59,18 @@ Ce document synthétise l'état actuel du projet et le reste à faire.
 
 ### À considérer (qualité/UX)
 - **Page `/docs`** : intégrer Swagger UI côté front ou page dédiée.
-- **Édition d’événement** : UI pour update (l’API est prête).
-- **Upload HEIC/HEIF** : aligner accept front/back (ou désactiver backend).
+
+### ⚠️ HEIC/HEIF (iPhone) — Non supporté
+
+Le support HEIC/HEIF a été investigué et abandonné en raison de la complexité d'implémentation :
+
+- **Sharp** (via libvips) inclut `libheif` mais uniquement avec le codec AV1 (AVIF). Le codec H.265 utilisé par HEIC n'est pas compilé, probablement pour des raisons de licence (brevets H.265).
+- **Problèmes identifiés** : les navigateurs envoient `application/octet-stream` comme MIME type pour les fichiers HEIC (pas `image/heic`), ce qui nécessite une résolution par extension.
+- **Solutions possibles** (non implémentées) :
+  - `heic-convert` (npm) : décodeur JavaScript pur, mais synchrone et lent sur de gros fichiers
+  - Compilation custom de libvips/libheif avec libde265
+  - Pré-conversion côté client avec `heic2any`
+- **Recommandation** : demander aux utilisateurs iPhone de convertir en JPEG avant upload (réglage iOS : Réglages > Appareil photo > Formats > Le plus compatible).
 
 ---
 
