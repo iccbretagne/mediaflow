@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui"
 import { LoginLogo } from "@/components/layout/LoginLogo"
 
@@ -68,9 +69,17 @@ export default async function HomePage() {
         </div>
 
         {/* Footer */}
-        <p className="text-sm text-gray-500 mt-8">
-          ICC Bretagne &copy; {new Date().getFullYear()}
-        </p>
+        <div className="mt-8 text-center">
+          <Link
+            href="/workflow"
+            className="text-sm text-icc-violet hover:underline"
+          >
+            Découvrir le workflow MediaFlow →
+          </Link>
+          <p className="text-sm text-gray-500 mt-4">
+            ICC Bretagne &copy; {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
     </div>
   )
