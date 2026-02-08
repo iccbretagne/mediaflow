@@ -48,10 +48,10 @@ export async function processImage(buffer: Buffer): Promise<ProcessedImage> {
     .jpeg({ quality: 90 })
     .toBuffer()
 
-  // Thumbnail: 400px wide, WebP format
+  // Thumbnail: 1200px wide, WebP format (optimized for Retina validation)
   const thumbnail = await sharp(buffer)
     .rotate()
-    .resize(400, null, { withoutEnlargement: true })
+    .resize(1200, null, { withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer()
 
@@ -169,7 +169,7 @@ export function getExtensionFromMimeType(mimeType: string): string {
 export async function generateThumbnail(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .rotate() // Auto-rotation based on EXIF
-    .resize(400, 300, { fit: "cover", position: "center" })
+    .resize(1200, 900, { fit: "cover", position: "center" })
     .webp({ quality: 80 })
     .toBuffer()
 }

@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "regenerate-thumbnails": "tsx scripts/regenerate-thumbnails.ts",
+    "regenerate-thumbnails:dry": "tsx scripts/regenerate-thumbnails.ts --dry-run"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",
@@ -52,6 +54,7 @@
     "eslint-config-next": "16.1.5",
     "jsdom": "^27.4.0",
     "tailwindcss": "^4",
+    "tsx": "^4.19.0",
     "typescript": "^5",
     "vitest": "^4.0.17"
   }
