@@ -63,9 +63,14 @@ export default async function ProjectDetailPage({
   }
 
   const { id } = await params
+  const isAdmin = session.user.role === "ADMIN"
 
   const project = (await prisma.project.findUnique({
-    where: { id, createdById: session.user.id },
+    where: {
+      id,
+      // Admins can view any project, others only their own
+      ...(!isAdmin && { createdById: session.user.id }),
+    },
     include: {
       church: {
         select: { name: true },

@@ -10,7 +10,7 @@ type MediaStatus = "PENDING" | "APPROVED" | "REJECTED" | "DRAFT" | "IN_REVIEW" |
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ churchId?: string }>
+  searchParams: Promise<{ churchId?: string; view?: string }>
 }) {
   const session = await auth()
 
@@ -19,7 +19,10 @@ export default async function ProjectsPage({
   }
 
   const params = await searchParams
-  const { churchId } = params
+  const { churchId, view } = params
+
+  const isAdmin = session.user.role === "ADMIN"
+  const showAll = isAdmin && view === "all"
 
   type ProjectWithMedia = {
     id: string
@@ -32,18 +35,24 @@ export default async function ProjectsPage({
     }
     description: string | null
     createdById: string
+    createdBy: {
+      name: string | null
+    }
     media: { type: MediaType; status: MediaStatus }[]
     _count: { media: number }
   }
 
   const projects = (await prisma.project.findMany({
     where: {
-      createdById: session.user.id,
+      ...(!showAll && { createdById: session.user.id }),
       ...(churchId && { churchId }),
     },
     orderBy: { createdAt: "desc" },
     include: {
       church: {
+        select: { name: true },
+      },
+      createdBy: {
         select: { name: true },
       },
       _count: {
@@ -72,9 +81,13 @@ export default async function ProjectsPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-icc-violet">Mes projets</h1>
+          <h1 className="text-3xl font-bold text-icc-violet">
+            {showAll ? "Tous les projets" : "Mes projets"}
+          </h1>
           <p className="text-gray-700 mt-1">
-            Gérez vos projets de visuels et vidéos
+            {showAll
+              ? "Tous les projets de l'équipe"
+              : "Gérez vos projets de visuels et vidéos"}
           </p>
         </div>
         <Link href="/projects/new">
@@ -96,6 +109,32 @@ export default async function ProjectsPage({
           </Button>
         </Link>
       </div>
+
+      {/* Filter for admins */}
+      {isAdmin && (
+        <div className="flex gap-2 mb-6">
+          <Link
+            href="/projects"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              !showAll
+                ? "bg-icc-violet text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Mes projets
+          </Link>
+          <Link
+            href="/projects?view=all"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              showAll
+                ? "bg-icc-violet text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Tous les projets
+          </Link>
+        </div>
+      )}
 
       {/* Projects list */}
       {projectsWithStats.length === 0 ? (
@@ -155,6 +194,9 @@ export default async function ProjectsPage({
                       month: "long",
                       day: "numeric",
                     })}
+                    {showAll && project.createdBy.name && (
+                      <span className="text-gray-400"> par {project.createdBy.name}</span>
+                    )}
                   </p>
 
                   {/* Stats */}

@@ -17,7 +17,7 @@ const statusConfig: Record<EventStatus, { label: string; variant: "default" | "w
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ churchId?: string; status?: string }>
+  searchParams: Promise<{ churchId?: string; status?: string; view?: string }>
 }) {
   const session = await auth()
 
@@ -26,7 +26,10 @@ export default async function DashboardPage({
   }
 
   const params = await searchParams
-  const { churchId, status } = params
+  const { churchId, status, view } = params
+
+  const isAdmin = session.user.role === "ADMIN"
+  const showAll = isAdmin && view === "all"
 
   type EventWithPhotos = {
     id: string
@@ -41,19 +44,25 @@ export default async function DashboardPage({
     description: string | null
     status: EventStatus
     createdById: string
+    createdBy: {
+      name: string | null
+    }
     photos: { status: "PENDING" | "APPROVED" | "REJECTED" }[]
     _count: { photos: number }
   }
 
   const events = (await prisma.event.findMany({
     where: {
-      createdById: session.user.id,
+      ...(!showAll && { createdById: session.user.id }),
       ...(churchId && { churchId }),
       ...(status && { status: status as EventStatus }),
     },
     orderBy: { date: "desc" },
     include: {
       church: {
+        select: { name: true },
+      },
+      createdBy: {
         select: { name: true },
       },
       _count: {
@@ -83,9 +92,13 @@ export default async function DashboardPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-icc-violet">Mes événements</h1>
+          <h1 className="text-3xl font-bold text-icc-violet">
+            {showAll ? "Tous les événements" : "Mes événements"}
+          </h1>
           <p className="text-gray-700 mt-1">
-            Gérez vos événements et validez les photos
+            {showAll
+              ? "Tous les événements de l'équipe"
+              : "Gérez vos événements et validez les photos"}
           </p>
         </div>
         <Link href="/events/new">
@@ -107,6 +120,32 @@ export default async function DashboardPage({
           </Button>
         </Link>
       </div>
+
+      {/* View filter for admins */}
+      {isAdmin && (
+        <div className="flex gap-2 mb-6">
+          <Link
+            href="/dashboard"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              !showAll
+                ? "bg-icc-violet text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Mes événements
+          </Link>
+          <Link
+            href="/dashboard?view=all"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              showAll
+                ? "bg-icc-violet text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Tous les événements
+          </Link>
+        </div>
+      )}
 
       {/* Filters */}
       <DashboardFilters churches={churches} />
@@ -169,6 +208,9 @@ export default async function DashboardPage({
                       month: "long",
                       day: "numeric",
                     })}
+                    {showAll && event.createdBy.name && (
+                      <span className="text-gray-400"> • {event.createdBy.name}</span>
+                    )}
                   </p>
 
                   {/* Stats */}
