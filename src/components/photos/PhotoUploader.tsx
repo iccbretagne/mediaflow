@@ -4,6 +4,9 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui"
 
+// Upload photos in batches to avoid memory issues
+const BATCH_SIZE = 10
+
 interface UploadedPhoto {
   id: string
   filename: string
@@ -33,52 +36,96 @@ export function PhotoUploader({ eventId }: PhotoUploaderProps) {
     errors: UploadError[]
   } | null>(null)
 
+  async function uploadBatch(
+    files: File[],
+    eventId: string
+  ): Promise<{ uploaded: UploadedPhoto[]; errors: UploadError[] }> {
+    const formData = new FormData()
+    formData.append("eventId", eventId)
+    for (const file of files) {
+      formData.append("files", file)
+    }
+
+    const res = await fetch("/api/photos/upload", {
+      method: "POST",
+      body: formData,
+    })
+
+    const response = await res.json()
+
+    if (!res.ok) {
+      // Return all files as errors if request failed
+      return {
+        uploaded: [],
+        errors: files.map((f) => ({
+          filename: f.name,
+          error: response.error?.message || "Erreur lors de l'upload",
+        })),
+      }
+    }
+
+    return {
+      uploaded: response.data.uploaded,
+      errors: response.data.errors,
+    }
+  }
+
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return
 
     setUploading(true)
     setResults(null)
 
-    const formData = new FormData()
-    formData.append("eventId", eventId)
-
     const fileArray = Array.from(files)
-    for (const file of fileArray) {
-      formData.append("files", file)
+    const allUploaded: UploadedPhoto[] = []
+    const allErrors: UploadError[] = []
+
+    // Split files into batches
+    const batches: File[][] = []
+    for (let i = 0; i < fileArray.length; i += BATCH_SIZE) {
+      batches.push(fileArray.slice(i, i + BATCH_SIZE))
     }
 
-    setProgress({ current: 0, total: fileArray.length, filename: fileArray[0].name })
+    // Process each batch sequentially
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex]
+      const processedCount = batchIndex * BATCH_SIZE
 
-    try {
-      const res = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
+      setProgress({
+        current: processedCount,
+        total: fileArray.length,
+        filename: `Lot ${batchIndex + 1}/${batches.length} (${batch.length} photos)`,
       })
 
-      const response = await res.json()
-
-      if (!res.ok) {
-        throw new Error(response.error?.message || "Erreur lors de l'upload")
+      try {
+        const result = await uploadBatch(batch, eventId)
+        allUploaded.push(...result.uploaded)
+        allErrors.push(...result.errors)
+      } catch (error) {
+        // Network error or other fatal error for this batch
+        allErrors.push(
+          ...batch.map((f) => ({
+            filename: f.name,
+            error: error instanceof Error ? error.message : "Erreur réseau",
+          }))
+        )
       }
+    }
 
-      setResults({
-        uploaded: response.data.uploaded,
-        errors: response.data.errors,
-      })
+    setResults({
+      uploaded: allUploaded,
+      errors: allErrors,
+    })
 
-      // Refresh page to show new photos
+    // Refresh page to show new photos
+    if (allUploaded.length > 0) {
       router.refresh()
-    } catch (error) {
-      setResults({
-        uploaded: [],
-        errors: [{ filename: "Upload", error: error instanceof Error ? error.message : "Erreur inconnue" }],
-      })
-    } finally {
-      setUploading(false)
-      setProgress(null)
-      if (inputRef.current) {
-        inputRef.current.value = ""
-      }
+    }
+
+    setUploading(false)
+    setProgress(null)
+    if (inputRef.current) {
+      inputRef.current.value = ""
     }
   }
 
@@ -140,9 +187,18 @@ export function PhotoUploader({ eventId }: PhotoUploaderProps) {
             </div>
             <p className="text-gray-700 font-medium">Upload en cours...</p>
             {progress && (
-              <p className="text-sm text-gray-500 mt-1">
-                {progress.current + 1} / {progress.total} - {progress.filename}
-              </p>
+              <>
+                <p className="text-sm text-gray-500 mt-1">{progress.filename}</p>
+                <div className="mt-2 w-48 mx-auto bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {progress.current} / {progress.total} photos
+                </p>
+              </>
             )}
           </div>
         ) : (
