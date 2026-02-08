@@ -15,6 +15,8 @@ type MediaStatus =
 
 interface MediaReviewGridProps {
   media: MediaReviewItem[]
+  canDelete?: boolean
+  onDelete?: (id: string) => void
 }
 
 const statusLabels: Record<MediaStatus, string> = {
@@ -37,7 +39,7 @@ const statusVariants: Record<MediaStatus, "default" | "warning" | "success" | "i
   FINAL_APPROVED: "success",
 }
 
-export function MediaReviewGrid({ media }: MediaReviewGridProps) {
+export function MediaReviewGrid({ media, canDelete = false, onDelete }: MediaReviewGridProps) {
   const [items, setItems] = useState(media)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = selectedId ? items.find((m) => m.id === selectedId) ?? null : null
@@ -48,6 +50,11 @@ export function MediaReviewGrid({ media }: MediaReviewGridProps) {
 
   function updateMedia(id: string, updates: Partial<MediaReviewItem>) {
     setItems((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)))
+  }
+
+  function handleDelete(id: string) {
+    setItems((prev) => prev.filter((m) => m.id !== id))
+    onDelete?.(id)
   }
 
   return (
@@ -90,6 +97,8 @@ export function MediaReviewGrid({ media }: MediaReviewGridProps) {
           onClose={() => setSelectedId(null)}
           onStatusChange={updateStatus}
           onMediaUpdate={updateMedia}
+          canDelete={canDelete}
+          onDelete={handleDelete}
         />
       )}
     </>

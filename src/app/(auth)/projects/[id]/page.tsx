@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { auth, isSuperAdmin } from "@/lib/auth"
 import { Card, CardContent, CardHeader, Badge } from "@/components/ui"
 import { ProjectActions, ProjectEditForm } from "@/components/projects"
 import { MediaUploader, MediaReviewGrid } from "@/components/media"
@@ -93,6 +93,10 @@ export default async function ProjectDetailPage({
   if (!project) {
     notFound()
   }
+
+  // Check if user can delete media (project creator or super admin)
+  const isProjectCreator = project.createdById === session.user.id
+  const canDelete = isProjectCreator || isSuperAdmin(session.user.email)
 
   const stats = {
     total: project.media.length,
@@ -255,7 +259,7 @@ export default async function ProjectDetailPage({
             Médias ({mediaItems.length})
           </CardHeader>
           <CardContent>
-            <MediaReviewGrid media={mediaItems} />
+            <MediaReviewGrid media={mediaItems} canDelete={canDelete} />
           </CardContent>
         </Card>
       ) : (

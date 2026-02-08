@@ -20,6 +20,14 @@ const SUPER_ADMIN_EMAILS = process.env.SUPER_ADMIN_EMAILS?.split(",")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean) || []
 
+/**
+ * Check if an email is a super admin
+ */
+export function isSuperAdmin(email: string | null | undefined): boolean {
+  if (!email) return false
+  return SUPER_ADMIN_EMAILS.includes(email.toLowerCase())
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [

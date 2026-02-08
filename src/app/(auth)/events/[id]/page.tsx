@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { auth, isSuperAdmin } from "@/lib/auth"
 import { getSignedThumbnailUrl } from "@/lib/s3"
 import { Card, CardContent, CardHeader, Button, Badge } from "@/components/ui"
 import { PhotoUploader } from "@/components/photos/PhotoUploader"
@@ -21,6 +21,7 @@ type EventWithRelations = {
   }
   description: string | null
   status: EventStatus
+  createdById: string
   media: {
     id: string
     filename: string
@@ -90,6 +91,10 @@ export default async function EventDetailPage({
   if (!event) {
     notFound()
   }
+
+  // Check if user can delete photos (event creator or super admin)
+  const isEventCreator = event.createdById === session.user.id
+  const canDelete = isEventCreator || isSuperAdmin(session.user.email)
 
   // Get signed URLs for thumbnails
   const photosWithUrls = await Promise.all(
@@ -235,7 +240,7 @@ export default async function EventDetailPage({
             Photos ({photosWithUrls.length})
           </CardHeader>
           <CardContent>
-            <PhotoGrid photos={photosWithUrls} />
+            <PhotoGrid photos={photosWithUrls} canDelete={canDelete} />
           </CardContent>
         </Card>
       )}

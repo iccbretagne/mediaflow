@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Badge, Button } from "@/components/ui"
+import { Badge, Button, ConfirmModal } from "@/components/ui"
 import { CommentThread } from "./CommentThread"
 
 type MediaStatus =
@@ -29,6 +29,8 @@ interface MediaReviewModalProps {
   onClose: () => void
   onStatusChange: (id: string, status: MediaStatus) => void
   onMediaUpdate: (id: string, updates: Partial<MediaReviewItem>) => void
+  canDelete?: boolean
+  onDelete?: (id: string) => void
 }
 
 const statusLabels: Record<MediaStatus, string> = {
@@ -82,6 +84,8 @@ export function MediaReviewModal({
   onClose,
   onStatusChange,
   onMediaUpdate,
+  canDelete = false,
+  onDelete,
 }: MediaReviewModalProps) {
   const [updating, setUpdating] = useState(false)
   const [revisionComment, setRevisionComment] = useState("")
@@ -90,7 +94,31 @@ export function MediaReviewModal({
   const [versionProgress, setVersionProgress] = useState(0)
   const [versionNotes, setVersionNotes] = useState("")
   const [versionFileName, setVersionFileName] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const versionFileRef = useRef<HTMLInputElement>(null)
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/media/${media.id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error?.message || "Erreur lors de la suppression")
+      }
+
+      setShowDeleteConfirm(false)
+      onDelete?.(media.id)
+      onClose()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erreur lors de la suppression")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   async function updateStatus(status: MediaStatus) {
     if (status === "REVISION_REQUESTED" && !revisionComment.trim()) {
@@ -268,9 +296,16 @@ export function MediaReviewModal({
               </Badge>
             </div>
           </div>
-          <Button variant="secondary" onClick={onClose}>
-            Fermer
-          </Button>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
+                Supprimer
+              </Button>
+            )}
+            <Button variant="secondary" onClick={onClose}>
+              Fermer
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto">
@@ -402,6 +437,18 @@ export function MediaReviewModal({
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Supprimer le média"
+        message={`Voulez-vous vraiment supprimer "${media.filename}" ? Cette action est irréversible.`}
+        confirmText="Supprimer"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }
