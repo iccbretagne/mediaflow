@@ -42,13 +42,6 @@ type EventWithRelations = {
   }[]
 }
 
-const statusConfig: Record<EventStatus, { label: string; variant: "default" | "warning" | "success" | "info" }> = {
-  DRAFT: { label: "Brouillon", variant: "default" },
-  PENDING_REVIEW: { label: "En attente de validation", variant: "warning" },
-  REVIEWED: { label: "Validé", variant: "success" },
-  ARCHIVED: { label: "Archivé", variant: "info" },
-}
-
 export default async function EventDetailPage({
   params,
 }: {

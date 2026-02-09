@@ -8,6 +8,7 @@ import {
   ApiError,
 } from "@/lib/api-utils"
 import { SubmitValidationSchema, TokenParamSchema } from "@/lib/schemas"
+import type { MediaStatus } from "@/lib/schemas"
 import { validateShareToken, isPrevalidationActive } from "@/lib/tokens"
 import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
@@ -18,23 +19,6 @@ function normalizeMediaStatus(status: string): "PENDING" | "APPROVED" | "REJECTE
   if (status === "REVISION_REQUESTED") return "REVISION_REQUESTED"
   if (status === "REJECTED") return "REJECTED"
   return "PENDING"
-}
-
-type ValidationItem = {
-  id: string
-  type: "PHOTO" | "VISUAL" | "VIDEO"
-  filename: string
-  thumbnailUrl: string
-  originalUrl?: string
-  status: "PENDING" | "APPROVED" | "REJECTED" | "REVISION_REQUESTED"
-  width: number | null
-  height: number | null
-  uploadedAt: string
-  validatedAt: string | null
-}
-
-function isValidationItem(item: ValidationItem | null): item is ValidationItem {
-  return item !== null
 }
 
 // GET /api/validate/[token] - Get event for validation
@@ -50,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const prevalidationActive = isPrevalidationActive(event.shareTokens)
 
       // Determine which statuses to show based on token type
-      let statusFilter: string[]
+      let statusFilter: MediaStatus[]
       if (isPrevalidator) {
         // Prevalidator sees only PENDING photos
         statusFilter = ["PENDING"]
@@ -66,7 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         where: {
           eventId: event.id,
           type: "PHOTO",
-          status: { in: statusFilter as any },
+          status: { in: statusFilter },
         },
         include: {
           versions: { orderBy: { versionNumber: "desc" }, take: 1 },
