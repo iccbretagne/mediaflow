@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       tokens.map((t) => ({
         id: t.id,
         token: t.token,
-        url: `${baseUrl}/${t.type === "VALIDATOR" ? "v" : "d"}/${t.token}`,
+        url: `${baseUrl}/${t.type === "MEDIA" ? "d" : "v"}/${t.token}`,
         type: t.type,
         label: t.label,
         expiresAt: t.expiresAt?.toISOString() || null,

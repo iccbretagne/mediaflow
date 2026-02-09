@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, Button } from "@/components/ui"
 
-type TokenType = "VALIDATOR" | "MEDIA"
+type TokenType = "VALIDATOR" | "MEDIA" | "PREVALIDATOR"
 
 interface ShareToken {
   id: string
@@ -19,11 +19,13 @@ interface ShareToken {
 }
 
 const tokenTypeLabels: Record<TokenType, string> = {
+  PREVALIDATOR: "Prévalidation",
   VALIDATOR: "Révision",
   MEDIA: "Téléchargement",
 }
 
 const tokenTypeDescriptions: Record<TokenType, string> = {
+  PREVALIDATOR: "Permet un premier tri des médias avant validation finale",
   VALIDATOR: "Permet de réviser et commenter les médias",
   MEDIA: "Permet de télécharger les médias approuvés",
 }
@@ -187,26 +189,38 @@ export default function ProjectSharePage({
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Type de lien
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {(["VALIDATOR", "MEDIA"] as TokenType[]).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setFormType(type)}
-                      className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                        formType === type
-                          ? "border-icc-violet bg-icc-violet-light"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <p className="font-medium text-gray-900">
-                        {tokenTypeLabels[type]}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {tokenTypeDescriptions[type]}
-                      </p>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {(["PREVALIDATOR", "VALIDATOR", "MEDIA"] as TokenType[]).map((type) => {
+                    const isDisabled = type === "PREVALIDATOR" && tokens.some((t) => t.type === "PREVALIDATOR")
+
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => !isDisabled && setFormType(type)}
+                        disabled={isDisabled}
+                        className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                          isDisabled
+                            ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                            : formType === type
+                            ? "border-icc-violet bg-icc-violet-light"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <p className="font-medium text-gray-900">
+                          {tokenTypeLabels[type]}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {tokenTypeDescriptions[type]}
+                        </p>
+                        {type === "PREVALIDATOR" && isDisabled && (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Déjà créé pour ce projet
+                          </p>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -319,7 +333,9 @@ export default function ProjectSharePage({
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          token.type === "VALIDATOR"
+                          token.type === "PREVALIDATOR"
+                            ? "bg-amber-100 text-amber-700"
+                            : token.type === "VALIDATOR"
                             ? "bg-icc-violet-light text-icc-violet"
                             : "bg-icc-bleu/10 text-icc-bleu"
                         }`}

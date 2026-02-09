@@ -132,6 +132,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             },
           },
         },
+        shareTokens: {
+          select: { type: true },
+        },
       },
     })
 
@@ -139,11 +142,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       throw new ApiError(404, "Project not found", "NOT_FOUND")
     }
 
+    const projectPrevalidationActive = isPrevalidationActive(project.shareTokens)
+
+    // Determine which statuses to show based on token type
+    let projectStatusFilter: MediaStatus[] | null = null
+    if (isPrevalidator) {
+      projectStatusFilter = ["PENDING"]
+    } else if (projectPrevalidationActive) {
+      projectStatusFilter = ["PREVALIDATED"]
+    }
+
+    const filteredMedia = projectStatusFilter
+      ? project.media.filter((m) => projectStatusFilter!.includes(m.status as MediaStatus))
+      : project.media
+
     const mediaWithUrls = await Promise.all(
-      project.media.map(async (media) => {
+      filteredMedia.map(async (media) => {
         const latestVersion = media.versions[0]
         if (!latestVersion) {
           return null
+        }
+
+        // For validator with prevalidation: show PREVALIDATED as PENDING
+        let displayStatus: string
+        if (!isPrevalidator && projectPrevalidationActive && media.status === "PREVALIDATED") {
+          displayStatus = "PENDING"
+        } else {
+          displayStatus = normalizeMediaStatus(media.status)
         }
 
         return {
@@ -154,7 +179,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           ...(media.type === "VIDEO"
             ? { originalUrl: await getSignedOriginalUrl(latestVersion.originalKey) }
             : {}),
-          status: normalizeMediaStatus(media.status),
+          status: displayStatus,
           width: media.width,
           height: media.height,
           uploadedAt: media.createdAt.toISOString(),
@@ -164,11 +189,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     )
 
     const photos = mediaWithUrls.filter((item): item is NonNullable<typeof item> => item !== null)
+
+    // Get all media for stats (unfiltered)
+    const allProjectMedia = project.media
     const stats = {
-      total: photos.length,
-      pending: photos.filter((p) => p.status === "PENDING").length,
-      approved: photos.filter((p) => p.status === "APPROVED").length,
-      rejected: photos.filter((p) => p.status === "REJECTED").length,
+      total: allProjectMedia.length,
+      pending: allProjectMedia.filter((m) => m.status === "PENDING").length,
+      approved: allProjectMedia.filter((m) => m.status === "APPROVED" || m.status === "FINAL_APPROVED").length,
+      rejected: allProjectMedia.filter((m) => m.status === "REJECTED").length,
+      ...(projectPrevalidationActive || isPrevalidator
+        ? {
+            prevalidated: allProjectMedia.filter((m) => m.status === "PREVALIDATED").length,
+            prerejected: allProjectMedia.filter((m) => m.status === "PREREJECTED").length,
+          }
+        : {}),
     }
 
     return successResponse({
@@ -180,6 +214,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
       photos,
       stats,
+      tokenType: shareToken.type as "VALIDATOR" | "PREVALIDATOR",
     })
   } catch (error) {
     return errorResponse(error)

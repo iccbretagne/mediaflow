@@ -8,7 +8,7 @@ import { MediaUploader, MediaReviewGrid } from "@/components/media"
 import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
 type MediaType = "PHOTO" | "VISUAL" | "VIDEO"
-type MediaStatus = "PENDING" | "APPROVED" | "REJECTED" | "DRAFT" | "IN_REVIEW" | "REVISION_REQUESTED" | "FINAL_APPROVED"
+type MediaStatus = "PENDING" | "APPROVED" | "REJECTED" | "DRAFT" | "IN_REVIEW" | "REVISION_REQUESTED" | "FINAL_APPROVED" | "PREVALIDATED" | "PREREJECTED"
 
 type ProjectWithRelations = {
   id: string
@@ -35,7 +35,7 @@ type ProjectWithRelations = {
   }[]
   shareTokens: {
     id: string
-    type: "VALIDATOR" | "MEDIA"
+    type: "VALIDATOR" | "MEDIA" | "PREVALIDATOR"
     label: string | null
     expiresAt: Date | null
     usageCount: number
@@ -98,6 +98,10 @@ export default async function ProjectDetailPage({
   const isProjectCreator = project.createdById === session.user.id
   const canDelete = isProjectCreator || isSuperAdmin(session.user.email)
 
+  const prevalidated = project.media.filter((m) => m.status === "PREVALIDATED").length
+  const prerejected = project.media.filter((m) => m.status === "PREREJECTED").length
+  const hasPrevalidation = project.shareTokens.some((t) => t.type === "PREVALIDATOR") || prevalidated > 0 || prerejected > 0
+
   const stats = {
     total: project.media.length,
     visuals: project.media.filter((m) => m.type === "VISUAL").length,
@@ -108,6 +112,8 @@ export default async function ProjectDetailPage({
     pending: project.media.filter(
       (m) => m.status === "PENDING" || m.status === "DRAFT" || m.status === "IN_REVIEW"
     ).length,
+    prevalidated,
+    prerejected,
   }
 
   const mediaWithUrls = await Promise.all(
@@ -166,11 +172,17 @@ export default async function ProjectDetailPage({
           }}
         />
 
-        <ProjectActions projectId={project.id} projectName={project.name} />
+        <ProjectActions
+          projectId={project.id}
+          projectName={project.name}
+          hasPrevalidation={hasPrevalidation}
+          nonPendingCount={stats.approved + stats.prevalidated + stats.prerejected}
+          prevalidationCount={stats.prevalidated + stats.prerejected}
+        />
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+      <div className={`grid grid-cols-2 ${hasPrevalidation ? "sm:grid-cols-3 lg:grid-cols-7" : "sm:grid-cols-5"} gap-4 mb-8`}>
         <Card>
           <CardContent className="p-5 text-center">
             <p className="text-3xl font-bold text-icc-violet">{stats.total}</p>
@@ -201,6 +213,22 @@ export default async function ProjectDetailPage({
             <p className="text-sm text-gray-700 font-medium mt-1">En attente</p>
           </CardContent>
         </Card>
+        {hasPrevalidation && (
+          <>
+            <Card>
+              <CardContent className="p-5 text-center">
+                <p className="text-3xl font-bold text-amber-600">{stats.prevalidated}</p>
+                <p className="text-sm text-gray-700 font-medium mt-1">Prévalidés</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5 text-center">
+                <p className="text-3xl font-bold text-gray-500">{stats.prerejected}</p>
+                <p className="text-sm text-gray-700 font-medium mt-1">Écartés</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Share tokens summary */}
@@ -221,7 +249,7 @@ export default async function ProjectDetailPage({
                       {token.label || "Sans nom"}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {token.type === "VALIDATOR" ? "Validation" : "Téléchargement"} •{" "}
+                      {token.type === "PREVALIDATOR" ? "Prévalidation" : token.type === "VALIDATOR" ? "Validation" : "Téléchargement"} •{" "}
                       {token.usageCount} utilisation{token.usageCount > 1 ? "s" : ""}
                     </p>
                   </div>

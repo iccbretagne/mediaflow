@@ -12,6 +12,8 @@ type MediaStatus =
   | "IN_REVIEW"
   | "REVISION_REQUESTED"
   | "FINAL_APPROVED"
+  | "PREVALIDATED"
+  | "PREREJECTED"
 
 type MediaType = "PHOTO" | "VISUAL" | "VIDEO"
 
@@ -41,6 +43,8 @@ const statusLabels: Record<MediaStatus, string> = {
   IN_REVIEW: "En révision",
   REVISION_REQUESTED: "Révision demandée",
   FINAL_APPROVED: "Approuvé",
+  PREVALIDATED: "Prévalidé",
+  PREREJECTED: "Écarté",
 }
 
 const statusVariants: Record<MediaStatus, "default" | "warning" | "success" | "info" | "danger"> = {
@@ -51,6 +55,8 @@ const statusVariants: Record<MediaStatus, "default" | "warning" | "success" | "i
   IN_REVIEW: "info",
   REVISION_REQUESTED: "warning",
   FINAL_APPROVED: "success",
+  PREVALIDATED: "info",
+  PREREJECTED: "default",
 }
 
 function getActions(status: MediaStatus, type: MediaType) {
