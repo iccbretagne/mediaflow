@@ -45,6 +45,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const approvedCount = event.media.filter((p) => p.status === "APPROVED").length
     const rejectedCount = event.media.filter((p) => p.status === "REJECTED").length
     const pendingCount = event.media.filter((p) => p.status === "PENDING").length
+    const prevalidatedCount = event.media.filter((p) => p.status === "PREVALIDATED").length
+    const prerejectedCount = event.media.filter((p) => p.status === "PREREJECTED").length
 
     return successResponse({
       id: event.id,
@@ -60,6 +62,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       approvedCount,
       rejectedCount,
       pendingCount,
+      prevalidatedCount,
+      prerejectedCount,
     })
   } catch (error) {
     return errorResponse(error)

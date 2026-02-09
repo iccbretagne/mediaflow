@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button, ConfirmModal } from "@/components/ui"
@@ -8,12 +8,38 @@ import { Button, ConfirmModal } from "@/components/ui"
 interface EventActionsProps {
   eventId: string
   eventName: string
+  hasPrevalidation: boolean
+  nonPendingCount: number
+  prevalidationCount: number
 }
 
-export function EventActions({ eventId, eventName }: EventActionsProps) {
+export function EventActions({
+  eventId,
+  eventName,
+  hasPrevalidation,
+  nonPendingCount,
+  prevalidationCount,
+}: EventActionsProps) {
   const router = useRouter()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showResetMenu, setShowResetMenu] = useState(false)
+  const [resetScope, setResetScope] = useState<"all" | "prevalidation" | null>(null)
+  const [resetting, setResetting] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowResetMenu(false)
+      }
+    }
+    if (showResetMenu) {
+      document.addEventListener("mousedown", handleClick)
+      return () => document.removeEventListener("mousedown", handleClick)
+    }
+  }, [showResetMenu])
 
   async function handleDelete() {
     setDeleting(true)
@@ -33,6 +59,30 @@ export function EventActions({ eventId, eventName }: EventActionsProps) {
     } catch (error) {
       alert(error instanceof Error ? error.message : "Erreur inconnue")
       setDeleting(false)
+    }
+  }
+
+  async function handleReset() {
+    if (!resetScope) return
+    setResetting(true)
+    try {
+      const res = await fetch(`/api/events/${eventId}/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: resetScope }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error?.message || "Erreur lors de la réinitialisation")
+      }
+
+      setResetScope(null)
+      router.refresh()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erreur inconnue")
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -57,6 +107,66 @@ export function EventActions({ eventId, eventName }: EventActionsProps) {
             Partager
           </Button>
         </Link>
+
+        {/* Reset button with dropdown */}
+        <div className="relative" ref={menuRef}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowResetMenu(!showResetMenu)}
+            disabled={nonPendingCount === 0}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Réinitialiser
+          </Button>
+
+          {showResetMenu && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-20">
+              <button
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={nonPendingCount === 0}
+                onClick={() => {
+                  setShowResetMenu(false)
+                  setResetScope("all")
+                }}
+              >
+                <p className="font-medium text-gray-900 text-sm">Tout réinitialiser</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Remettre toutes les photos en attente
+                </p>
+              </button>
+              {hasPrevalidation && (
+                <button
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={prevalidationCount === 0}
+                  onClick={() => {
+                    setShowResetMenu(false)
+                    setResetScope("prevalidation")
+                  }}
+                >
+                  <p className="font-medium text-gray-900 text-sm">
+                    Réinitialiser la prévalidation
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Remettre les photos prévalidées/écartées en attente
+                  </p>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <Button
           variant="danger"
           onClick={() => setShowDeleteModal(true)}
@@ -77,6 +187,29 @@ export function EventActions({ eventId, eventName }: EventActionsProps) {
           Supprimer
         </Button>
       </div>
+
+      {/* Reset confirmation modals */}
+      <ConfirmModal
+        isOpen={resetScope === "all"}
+        onClose={() => setResetScope(null)}
+        onConfirm={handleReset}
+        title="Tout réinitialiser"
+        message="Toutes les photos seront remises en attente et l'événement repassera en brouillon."
+        confirmText="Réinitialiser"
+        variant="warning"
+        loading={resetting}
+      />
+
+      <ConfirmModal
+        isOpen={resetScope === "prevalidation"}
+        onClose={() => setResetScope(null)}
+        onConfirm={handleReset}
+        title="Réinitialiser la prévalidation"
+        message="Les photos prévalidées et écartées seront remises en attente."
+        confirmText="Réinitialiser"
+        variant="warning"
+        loading={resetting}
+      />
 
       <ConfirmModal
         isOpen={showDeleteModal}

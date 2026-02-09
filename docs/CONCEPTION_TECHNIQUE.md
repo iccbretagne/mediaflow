@@ -1403,5 +1403,168 @@ tests/
 
 ---
 
+## 11. Prévalidation des photos
+
+### 11.1 Objectif
+
+Permettre un premier tri des photos par une personne de confiance (prévalidateur) avant la validation définitive par le pasteur/responsable. Cette étape est **optionnelle** et s'active automatiquement lors de la création d'un lien de prévalidation.
+
+### 11.2 Modifications du schéma
+
+```prisma
+// Nouveaux statuts photo
+enum PhotoStatus {
+  PENDING       // En attente (initial)
+  PREVALIDATED  // Gardée après prévalidation, en attente validation finale
+  PREREJECTED   // Écartée lors de la prévalidation (terminal, masquée)
+  APPROVED      // Validée définitivement
+  REJECTED      // Rejetée définitivement
+}
+
+// Nouveau type de token
+enum TokenType {
+  VALIDATOR     // Accès validation finale
+  MEDIA         // Accès téléchargement
+  PREVALIDATOR  // Accès prévalidation (premier tri)
+}
+```
+
+### 11.3 Logique métier
+
+#### Activation de la prévalidation
+
+```typescript
+// La prévalidation est active si un token PREVALIDATOR existe pour l'événement
+function isPrevalidationEnabled(event: EventWithTokens): boolean {
+  return event.shareTokens.some(t => t.type === 'PREVALIDATOR')
+}
+```
+
+#### Blocage de création de tokens
+
+```typescript
+// Peut-on créer un token VALIDATOR ou MEDIA ?
+function canCreateValidatorOrMediaToken(event: EventWithPhotos): boolean {
+  const hasPrevalidatorToken = event.shareTokens.some(t => t.type === 'PREVALIDATOR')
+
+  if (!hasPrevalidatorToken) {
+    return true // Pas de prévalidation, workflow normal
+  }
+
+  // Prévalidation activée : vérifier si terminée
+  const pendingPhotos = event.photos.filter(p => p.status === 'PENDING')
+  return pendingPhotos.length === 0 // Toutes les photos ont été traitées
+}
+```
+
+#### Unicité du prévalidateur
+
+```typescript
+// Un seul token PREVALIDATOR par événement
+function canCreatePrevalidatorToken(event: EventWithTokens): boolean {
+  return !event.shareTokens.some(t => t.type === 'PREVALIDATOR')
+}
+```
+
+### 11.4 Transitions de statut
+
+#### Sans prévalidation
+
+```
+PENDING ──► APPROVED
+        └─► REJECTED
+
+APPROVED ◄──► REJECTED (réversible)
+```
+
+#### Avec prévalidation
+
+```
+PENDING ──► PREVALIDATED ──► APPROVED
+        │               └─► REJECTED
+        │
+        └─► PREREJECTED (terminal)
+
+PREVALIDATED ◄──► PENDING (annulation prévalidation)
+APPROVED ◄──► REJECTED (réversible)
+```
+
+### 11.5 Visibilité des photos
+
+| Type de token | Statuts visibles |
+|---------------|------------------|
+| `PREVALIDATOR` | `PENDING` uniquement |
+| `VALIDATOR` (sans prévalidation) | `PENDING` uniquement |
+| `VALIDATOR` (avec prévalidation) | `PREVALIDATED` uniquement |
+| `MEDIA` | `APPROVED` uniquement |
+
+### 11.6 API
+
+#### Création de token PREVALIDATOR
+
+```
+POST /api/events/{id}/share
+{
+  "type": "PREVALIDATOR",
+  "label": "Équipe photo"
+}
+```
+
+**Réponse :**
+```json
+{
+  "data": {
+    "token": "a1b2c3...",
+    "url": "https://app.mediaflow.fr/v/a1b2c3...",
+    "type": "PREVALIDATOR"
+  }
+}
+```
+
+**Erreurs possibles :**
+- `409 Conflict` : Un token PREVALIDATOR existe déjà pour cet événement
+
+#### Soumission prévalidation
+
+```
+PATCH /api/validate/{token}
+{
+  "decisions": [
+    { "photoId": "abc123", "status": "PREVALIDATED" },
+    { "photoId": "def456", "status": "PREREJECTED" }
+  ]
+}
+```
+
+### 11.7 Interface utilisateur
+
+#### Page de gestion des tokens (`/events/[id]/share`)
+
+- Afficher le statut de prévalidation :
+  - "Prévalidation en cours (X/Y photos traitées)"
+  - "Prévalidation terminée"
+- Boutons de création de tokens :
+  - PREVALIDATOR : désactivé si déjà existant
+  - VALIDATOR/MEDIA : désactivés si prévalidation non terminée (avec tooltip explicatif)
+
+#### Page de prévalidation (`/v/[token]` avec token PREVALIDATOR)
+
+- Même interface swipe/grid que la validation
+- Actions : "Garder" (→ PREVALIDATED) / "Écarter" (→ PREREJECTED)
+- Possibilité d'annuler (re-switcher)
+
+### 11.8 Règles récapitulatives
+
+| Règle | Implémentation |
+|-------|----------------|
+| Activation automatique | Présence d'un token PREVALIDATOR |
+| Blocage VALIDATOR/MEDIA | Si PREVALIDATOR existe ET photos PENDING > 0 |
+| Un seul prévalidateur | Refuser création si token PREVALIDATOR existe |
+| Suppression token | Photos gardent leur statut (pas de rollback) |
+| Annulation décision | Transitions PREVALIDATED ↔ PENDING autorisées |
+| Transparence validateur | Aucune indication de prévalidation côté validateur |
+
+---
+
 *Document généré le 21 janvier 2025*
-*Version : 1.0 - Conception technique initiale*
+*Version : 1.1 - Ajout prévalidation (février 2026)*

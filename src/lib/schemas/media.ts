@@ -13,6 +13,8 @@ export const MediaStatusEnum = z
     "PENDING",
     "APPROVED",
     "REJECTED",
+    "PREVALIDATED",
+    "PREREJECTED",
     "DRAFT",
     "IN_REVIEW",
     "REVISION_REQUESTED",

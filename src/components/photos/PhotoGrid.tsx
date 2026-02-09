@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ConfirmModal } from "@/components/ui"
 
-type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED"
+type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED"
 
 interface Photo {
   id: string
@@ -40,12 +40,28 @@ const statusIcons: Record<PhotoStatus, React.ReactNode> = {
       </svg>
     </div>
   ),
+  PREVALIDATED: (
+    <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  ),
+  PREREJECTED: (
+    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </div>
+  ),
 }
 
 const statusLabels: Record<PhotoStatus, string> = {
   PENDING: "En attente",
   APPROVED: "Validée",
   REJECTED: "Rejetée",
+  PREVALIDATED: "Prévalidée",
+  PREREJECTED: "Écartée",
 }
 
 export function PhotoGrid({ photos, canDelete = false }: PhotoGridProps) {

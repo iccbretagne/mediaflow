@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, Button } from "@/components/ui"
 
-type TokenType = "VALIDATOR" | "MEDIA"
+type TokenType = "VALIDATOR" | "MEDIA" | "PREVALIDATOR"
 
 interface ShareToken {
   id: string
@@ -18,12 +18,21 @@ interface ShareToken {
   createdAt: string
 }
 
+interface EventStats {
+  total: number
+  pending: number
+  prevalidated: number
+  prerejected: number
+}
+
 const tokenTypeLabels: Record<TokenType, string> = {
+  PREVALIDATOR: "Prévalidation",
   VALIDATOR: "Validation",
   MEDIA: "Téléchargement",
 }
 
 const tokenTypeDescriptions: Record<TokenType, string> = {
+  PREVALIDATOR: "Permet de filtrer les photos avant la validation finale",
   VALIDATOR: "Permet de valider ou rejeter les photos",
   MEDIA: "Permet de télécharger les photos validées",
 }
@@ -39,19 +48,39 @@ export default function SharePage({
   const [creating, setCreating] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [eventStats, setEventStats] = useState<EventStats | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   // Form state
   const [formType, setFormType] = useState<TokenType>("VALIDATOR")
   const [formLabel, setFormLabel] = useState("")
   const [formExpires, setFormExpires] = useState("7")
 
+  // Derived state
+  const hasPrevalidator = tokens.some((t) => t.type === "PREVALIDATOR")
+  const prevalidationInProgress = hasPrevalidator && eventStats !== null && eventStats.pending > 0
+  const prevalidationDone = hasPrevalidator && eventStats !== null && eventStats.pending === 0
+
   const fetchTokens = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/events/${eventId}/share`)
-      const data = await res.json()
-      if (res.ok) {
-        setTokens(data.data || [])
+      const [tokensRes, eventRes] = await Promise.all([
+        fetch(`/api/events/${eventId}/share`),
+        fetch(`/api/events/${eventId}`),
+      ])
+      const tokensData = await tokensRes.json()
+      const eventData = await eventRes.json()
+      if (tokensRes.ok) {
+        setTokens(tokensData.data || [])
+      }
+      if (eventRes.ok) {
+        const ev = eventData.data
+        setEventStats({
+          total: ev.photoCount ?? 0,
+          pending: ev.pendingCount ?? 0,
+          prevalidated: ev.prevalidatedCount ?? 0,
+          prerejected: ev.prerejectedCount ?? 0,
+        })
       }
     } catch (error) {
       console.error("Error fetching tokens:", error)
@@ -67,6 +96,7 @@ export default function SharePage({
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setCreating(true)
+    setCreateError(null)
 
     try {
       const res = await fetch(`/api/events/${eventId}/share`, {
@@ -84,6 +114,9 @@ export default function SharePage({
         setShowForm(false)
         setFormLabel("")
         setFormExpires("7")
+      } else {
+        const data = await res.json()
+        setCreateError(data.error?.message || "Erreur lors de la création")
       }
     } catch (error) {
       console.error("Error creating token:", error)
@@ -187,28 +220,54 @@ export default function SharePage({
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Type de lien
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {(["VALIDATOR", "MEDIA"] as TokenType[]).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setFormType(type)}
-                      className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                        formType === type
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <p className="font-medium text-gray-900">
-                        {tokenTypeLabels[type]}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {tokenTypeDescriptions[type]}
-                      </p>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {(["PREVALIDATOR", "VALIDATOR", "MEDIA"] as TokenType[]).map((type) => {
+                    const isDisabled =
+                      (type === "PREVALIDATOR" && hasPrevalidator) ||
+                      ((type === "VALIDATOR" || type === "MEDIA") && prevalidationInProgress)
+
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => !isDisabled && setFormType(type)}
+                        disabled={isDisabled}
+                        className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                          isDisabled
+                            ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                            : formType === type
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <p className="font-medium text-gray-900">
+                          {tokenTypeLabels[type]}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {tokenTypeDescriptions[type]}
+                        </p>
+                        {type === "PREVALIDATOR" && hasPrevalidator && (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Déjà créé pour cet événement
+                          </p>
+                        )}
+                        {(type === "VALIDATOR" || type === "MEDIA") && prevalidationInProgress && (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Prévalidation en cours ({eventStats?.pending} restante(s))
+                          </p>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
+
+              {/* Create error */}
+              {createError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                  {createError}
+                </div>
+              )}
 
               {/* Label */}
               <div>
@@ -271,6 +330,32 @@ export default function SharePage({
         </Card>
       )}
 
+      {/* Prevalidation status banner */}
+      {hasPrevalidator && eventStats && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  prevalidationDone ? "bg-green-500" : "bg-amber-500 animate-pulse"
+                }`}
+              />
+              <div>
+                <p className="font-medium text-gray-900">
+                  {prevalidationDone
+                    ? "Prévalidation terminée"
+                    : "Prévalidation en cours"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {eventStats.prevalidated} gardée(s), {eventStats.prerejected} écartée(s)
+                  {!prevalidationDone && ` — ${eventStats.pending} restante(s) sur ${eventStats.total}`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tokens list */}
       {loading ? (
         <div className="text-center py-12">
@@ -319,7 +404,9 @@ export default function SharePage({
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          token.type === "VALIDATOR"
+                          token.type === "PREVALIDATOR"
+                            ? "bg-amber-100 text-amber-700"
+                            : token.type === "VALIDATOR"
                             ? "bg-purple-100 text-purple-700"
                             : "bg-blue-100 text-blue-700"
                         }`}

@@ -9,7 +9,7 @@ import { PhotoGrid } from "@/components/photos/PhotoGrid"
 import { EventActions, EventEditForm } from "@/components/events"
 
 type EventStatus = "DRAFT" | "PENDING_REVIEW" | "REVIEWED" | "ARCHIVED"
-type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED"
+type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED"
 
 type EventWithRelations = {
   id: string
@@ -34,7 +34,7 @@ type EventWithRelations = {
   }[]
   shareTokens: {
     id: string
-    type: "VALIDATOR" | "MEDIA"
+    type: "VALIDATOR" | "MEDIA" | "PREVALIDATOR"
     label: string | null
     expiresAt: Date | null
     usageCount: number
@@ -109,11 +109,17 @@ export default async function EventDetailPage({
     })
   )
 
+  const prevalidated = event.media.filter((p) => p.status === "PREVALIDATED").length
+  const prerejected = event.media.filter((p) => p.status === "PREREJECTED").length
+  const hasPrevalidation = event.shareTokens.some((t) => t.type === "PREVALIDATOR") || prevalidated > 0 || prerejected > 0
+
   const stats = {
     total: event.media.length,
     approved: event.media.filter((p) => p.status === "APPROVED").length,
     rejected: event.media.filter((p) => p.status === "REJECTED").length,
     pending: event.media.filter((p) => p.status === "PENDING").length,
+    prevalidated,
+    prerejected,
   }
 
   return (
@@ -153,11 +159,17 @@ export default async function EventDetailPage({
           }}
         />
 
-        <EventActions eventId={event.id} eventName={event.name} />
+        <EventActions
+          eventId={event.id}
+          eventName={event.name}
+          hasPrevalidation={hasPrevalidation}
+          nonPendingCount={stats.approved + stats.rejected + stats.prevalidated + stats.prerejected}
+          prevalidationCount={stats.prevalidated + stats.prerejected}
+        />
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className={`grid grid-cols-2 ${hasPrevalidation ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-4"} gap-4 mb-8`}>
         <Card>
           <CardContent className="p-5 text-center">
             <p className="text-3xl font-bold text-icc-violet">{stats.total}</p>
@@ -182,6 +194,22 @@ export default async function EventDetailPage({
             <p className="text-sm text-gray-700 font-medium mt-1">En attente</p>
           </CardContent>
         </Card>
+        {hasPrevalidation && (
+          <>
+            <Card>
+              <CardContent className="p-5 text-center">
+                <p className="text-3xl font-bold text-amber-600">{stats.prevalidated}</p>
+                <p className="text-sm text-gray-700 font-medium mt-1">Prévalidées</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5 text-center">
+                <p className="text-3xl font-bold text-gray-500">{stats.prerejected}</p>
+                <p className="text-sm text-gray-700 font-medium mt-1">Écartées</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Share tokens summary */}
@@ -202,7 +230,7 @@ export default async function EventDetailPage({
                       {token.label || "Sans nom"}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {token.type === "VALIDATOR" ? "Validation" : "Téléchargement"} •{" "}
+                      {token.type === "PREVALIDATOR" ? "Prévalidation" : token.type === "VALIDATOR" ? "Validation" : "Téléchargement"} •{" "}
                       {token.usageCount} utilisation{token.usageCount > 1 ? 's' : ''}
                     </p>
                   </div>

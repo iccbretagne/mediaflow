@@ -5,7 +5,7 @@ import { z } from "zod"
 // ============================================
 
 export const PhotoStatusEnum = z
-  .enum(["PENDING", "APPROVED", "REJECTED"])
+  .enum(["PENDING", "APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED"])
   .openapi("PhotoStatus")
 
 // ============================================

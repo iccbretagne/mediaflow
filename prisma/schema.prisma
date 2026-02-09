@@ -136,9 +136,11 @@ model Project {
 // ============================================
 
 enum PhotoStatus {
-  PENDING  // En attente de validation
-  APPROVED // Validée
-  REJECTED // Rejetée
+  PENDING      // En attente de validation
+  APPROVED     // Validée
+  REJECTED     // Rejetée
+  PREVALIDATED // Pré-validée (filtrée par le prévalidateur)
+  PREREJECTED  // Écartée par le prévalidateur
 }
 
 // ============================================
@@ -155,6 +157,8 @@ enum MediaStatus {
   PENDING            // Photos: en attente
   APPROVED           // Photos: validée
   REJECTED           // Rejetée (photos et médias)
+  PREVALIDATED       // Photos: pré-validée par le prévalidateur
+  PREREJECTED        // Photos: écartée par le prévalidateur
   DRAFT              // Médias: brouillon
   IN_REVIEW          // Médias: en révision
   REVISION_REQUESTED // Médias: révision demandée
@@ -306,8 +310,9 @@ model Comment {
 // ============================================
 
 enum TokenType {
-  VALIDATOR // Accès validation (lecture + modification status)
-  MEDIA     // Accès téléchargement (lecture photos validées uniquement)
+  VALIDATOR    // Accès validation (lecture + modification status)
+  MEDIA        // Accès téléchargement (lecture photos validées uniquement)
+  PREVALIDATOR // Accès prévalidation (filtrage avant validation finale)
 }
 
 model ShareToken {

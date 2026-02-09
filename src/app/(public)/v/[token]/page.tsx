@@ -26,10 +26,28 @@ interface EventData {
     pending: number
     approved: number
     rejected: number
+    prevalidated?: number
+    prerejected?: number
   }
+  tokenType?: "VALIDATOR" | "PREVALIDATOR"
 }
 
-type Decision = "APPROVED" | "REJECTED" | "REVISION_REQUESTED"
+type Decision = "APPROVED" | "REJECTED" | "REVISION_REQUESTED" | "PREVALIDATED" | "PREREJECTED"
+
+const modeLabels = {
+  VALIDATOR: {
+    approved: "Validée",
+    rejected: "Rejetée",
+    approvedPlural: "validées",
+    rejectedPlural: "rejetées",
+  },
+  PREVALIDATOR: {
+    approved: "Gardée",
+    rejected: "Écartée",
+    approvedPlural: "gardées",
+    rejectedPlural: "écartées",
+  },
+} as const
 
 export default function ValidationPage() {
   const params = useParams()
@@ -85,6 +103,8 @@ export default function ValidationPage() {
   const currentPhoto = data?.photos[currentIndex]
   const totalPhotos = data?.photos.length || 0
   const hasReviewable = data?.photos.some((p) => p.type !== "PHOTO") ?? false
+  const isPrevalidator = data?.tokenType === "PREVALIDATOR"
+  const labels = modeLabels[isPrevalidator ? "PREVALIDATOR" : "VALIDATOR"]
 
   // Decision handlers
   const makeDecision = useCallback(
@@ -174,6 +194,13 @@ export default function ValidationPage() {
     async (decision: Decision) => {
       if (!currentPhoto) return
 
+      // Map decisions for prevalidator mode
+      let mappedDecision = decision
+      if (isPrevalidator) {
+        if (decision === "APPROVED") mappedDecision = "PREVALIDATED"
+        else if (decision === "REJECTED") mappedDecision = "PREREJECTED"
+      }
+
       if (currentPhoto.type !== "PHOTO" && decision !== "REVISION_REQUESTED") {
         try {
           await updateMediaStatus(
@@ -186,9 +213,9 @@ export default function ValidationPage() {
         }
       }
 
-      makeDecision(decision)
+      makeDecision(mappedDecision)
     },
-    [currentPhoto, updateMediaStatus, makeDecision]
+    [currentPhoto, updateMediaStatus, makeDecision, isPrevalidator]
   )
 
   const toggleDecision = useCallback(
@@ -196,15 +223,17 @@ export default function ValidationPage() {
       setDecisions((prev) => {
         const next = new Map(prev)
         const current = next.get(photoId)
-        if (current === "APPROVED") {
-          next.set(photoId, "REJECTED")
+        const approveStatus: Decision = isPrevalidator ? "PREVALIDATED" : "APPROVED"
+        const rejectStatus: Decision = isPrevalidator ? "PREREJECTED" : "REJECTED"
+        if (current === approveStatus) {
+          next.set(photoId, rejectStatus)
         } else {
-          next.set(photoId, "APPROVED")
+          next.set(photoId, approveStatus)
         }
         return next
       })
     },
-    []
+    [isPrevalidator]
   )
 
   const submit = async () => {
@@ -212,8 +241,11 @@ export default function ValidationPage() {
 
     setSubmitting(true)
     try {
+      const validStatuses = isPrevalidator
+        ? ["PREVALIDATED", "PREREJECTED", "PENDING"]
+        : ["APPROVED", "REJECTED"]
       const decisionsArray = Array.from(decisions.entries())
-        .filter(([, status]) => status === "APPROVED" || status === "REJECTED")
+        .filter(([, status]) => validStatuses.includes(status))
         .map(([photoId, status]) => ({
           photoId,
           status,
@@ -346,17 +378,25 @@ export default function ValidationPage() {
 
   // Summary view
   if (showSummary) {
-    const approvedCount = Array.from(decisions.values()).filter((d) => d === "APPROVED").length
-    const rejectedCount = Array.from(decisions.values()).filter((d) => d === "REJECTED").length
+    const approvedCount = Array.from(decisions.values()).filter(
+      (d) => d === "APPROVED" || d === "PREVALIDATED"
+    ).length
+    const rejectedCount = Array.from(decisions.values()).filter(
+      (d) => d === "REJECTED" || d === "PREREJECTED"
+    ).length
     const revisionCount = Array.from(decisions.values()).filter((d) => d === "REVISION_REQUESTED").length
     const photoIds = data.photos.filter((p) => p.type === "PHOTO").map((p) => p.id)
     const photoDecisionCount = photoIds.filter((id) => {
       const status = decisions.get(id)
-      return status === "APPROVED" || status === "REJECTED"
+      return status === "APPROVED" || status === "REJECTED" ||
+        status === "PREVALIDATED" || status === "PREREJECTED"
     }).length
     const filteredPhotos = data.photos.filter((photo) => {
       if (summaryFilter === "ALL") return true
-      return decisions.get(photo.id) === summaryFilter
+      const decision = decisions.get(photo.id)
+      if (summaryFilter === "APPROVED") return decision === "APPROVED" || decision === "PREVALIDATED"
+      if (summaryFilter === "REJECTED") return decision === "REJECTED" || decision === "PREREJECTED"
+      return decision === summaryFilter
     })
 
     return (
@@ -377,7 +417,7 @@ export default function ValidationPage() {
             &larr; Retour
           </button>
             <span className="font-medium">
-              {approvedCount}/{totalPhotos} validées
+              {approvedCount}/{totalPhotos} {labels.approvedPlural}
             </span>
           </div>
         </header>
@@ -402,7 +442,7 @@ export default function ValidationPage() {
                 : "bg-gray-100 text-gray-700"
             }`}
           >
-            Validées ({approvedCount})
+            {isPrevalidator ? "Gardées" : "Validées"} ({approvedCount})
           </button>
           <button
             onClick={() => setSummaryFilter("REJECTED")}
@@ -412,7 +452,7 @@ export default function ValidationPage() {
                 : "bg-gray-100 text-gray-700"
             }`}
           >
-            Rejetées ({rejectedCount})
+            {isPrevalidator ? "Écartées" : "Rejetées"} ({rejectedCount})
           </button>
           {hasReviewable && (
             <button
@@ -464,14 +504,14 @@ export default function ValidationPage() {
                 {decision && (
                 <div
                   className={`absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm ${
-                    decision === "APPROVED"
+                    decision === "APPROVED" || decision === "PREVALIDATED"
                       ? "bg-green-500"
-                      : decision === "REJECTED"
+                      : decision === "REJECTED" || decision === "PREREJECTED"
                       ? "bg-red-500"
                       : "bg-yellow-500"
                   }`}
                 >
-                  {decision === "APPROVED" ? "✓" : decision === "REJECTED" ? "✗" : "!"}
+                  {decision === "APPROVED" || decision === "PREVALIDATED" ? "✓" : decision === "REJECTED" || decision === "PREREJECTED" ? "✗" : "!"}
                 </div>
               )}
               {hasReviewable && decision === "REVISION_REQUESTED" && (
@@ -584,23 +624,35 @@ export default function ValidationPage() {
             )}
             {dragX === 0 && (
               <div className="absolute top-4 left-4">
-                {decisions.get(currentPhoto.id) === "APPROVED" ? (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-600 text-white">
-                    Validée
-                  </span>
-                ) : decisions.get(currentPhoto.id) === "REJECTED" ? (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-600 text-white">
-                    Rejetée
-                  </span>
-                ) : decisions.get(currentPhoto.id) === "REVISION_REQUESTED" ? (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-600 text-white">
-                    Révision demandée
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-700 text-white">
-                    En attente
-                  </span>
-                )}
+                {(() => {
+                  const d = decisions.get(currentPhoto.id)
+                  if (d === "APPROVED" || d === "PREVALIDATED") {
+                    return (
+                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-600 text-white">
+                        {labels.approved}
+                      </span>
+                    )
+                  }
+                  if (d === "REJECTED" || d === "PREREJECTED") {
+                    return (
+                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-600 text-white">
+                        {labels.rejected}
+                      </span>
+                    )
+                  }
+                  if (d === "REVISION_REQUESTED") {
+                    return (
+                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-600 text-white">
+                        Révision demandée
+                      </span>
+                    )
+                  }
+                  return (
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-700 text-white">
+                      En attente
+                    </span>
+                  )
+                })()}
               </div>
             )}
           </div>
@@ -656,11 +708,12 @@ export default function ValidationPage() {
       {undoAction && (
         <div className="fixed left-4 right-4 bg-gray-800 text-white rounded-lg px-4 py-3 flex items-center justify-between" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
           <span>
-            {decisions.get(undoAction.photoId) === "APPROVED"
-              ? "Validée"
-              : decisions.get(undoAction.photoId) === "REJECTED"
-              ? "Rejetée"
-              : "Révision demandée"}
+            {(() => {
+              const d = decisions.get(undoAction.photoId)
+              if (d === "APPROVED" || d === "PREVALIDATED") return labels.approved
+              if (d === "REJECTED" || d === "PREREJECTED") return labels.rejected
+              return "Révision demandée"
+            })()}
           </span>
           <button onClick={undo} className="text-blue-400 font-medium">
             ANNULER

@@ -9,7 +9,7 @@ export const EventStatusEnum = z
   .enum(["DRAFT", "PENDING_REVIEW", "REVIEWED", "ARCHIVED"])
   .openapi("EventStatus")
 
-export const TokenTypeEnum = z.enum(["VALIDATOR", "MEDIA"]).openapi("TokenType")
+export const TokenTypeEnum = z.enum(["VALIDATOR", "MEDIA", "PREVALIDATOR"]).openapi("TokenType")
 
 // ============================================
 // EVENT SCHEMAS

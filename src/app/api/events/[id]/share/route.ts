@@ -24,10 +24,50 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check event exists
     const event = await prisma.event.findUnique({
       where: { id },
+      include: {
+        shareTokens: { select: { type: true } },
+        media: {
+          where: { type: "PHOTO" },
+          select: { status: true },
+        },
+      },
     })
 
     if (!event) {
       throw new ApiError(404, "Event not found", "NOT_FOUND")
+    }
+
+    // Rule 1: Only one PREVALIDATOR per event
+    if (body.type === "PREVALIDATOR") {
+      const existingPrevalidator = event.shareTokens.some(
+        (t) => t.type === "PREVALIDATOR"
+      )
+      if (existingPrevalidator) {
+        throw new ApiError(
+          409,
+          "Un lien de prévalidation existe déjà pour cet événement",
+          "PREVALIDATOR_EXISTS"
+        )
+      }
+    }
+
+    // Rule 2: Block VALIDATOR/MEDIA if prevalidation is active and PENDING photos remain
+    if (body.type === "VALIDATOR" || body.type === "MEDIA") {
+      const hasPrevalidator = event.shareTokens.some(
+        (t) => t.type === "PREVALIDATOR"
+      )
+      if (hasPrevalidator) {
+        const pendingCount = event.media.filter(
+          (m) => m.status === "PENDING"
+        ).length
+        if (pendingCount > 0) {
+          throw new ApiError(
+            409,
+            `La prévalidation est en cours (${pendingCount} photo(s) restante(s)). Terminez la prévalidation avant de créer un lien de validation ou de téléchargement.`,
+            "PREVALIDATION_IN_PROGRESS"
+          )
+        }
+      }
     }
 
     const token = await createEventShareToken(
@@ -83,7 +123,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       tokens.map((t) => ({
         id: t.id,
         token: t.token,
-        url: `${baseUrl}/${t.type === "VALIDATOR" ? "v" : "d"}/${t.token}`,
+        url: `${baseUrl}/${t.type === "MEDIA" ? "d" : "v"}/${t.token}`,
         type: t.type,
         label: t.label,
         expiresAt: t.expiresAt?.toISOString() || null,

@@ -27,7 +27,7 @@ export function isTokenExpired(expiresAt: Date | null): boolean {
 
 export async function validateShareToken(
   token: string,
-  requiredType?: TokenType
+  requiredType?: TokenType | TokenType[]
 ) {
   const shareToken = await prisma.shareToken.findUnique({
     where: { token },
@@ -37,6 +37,9 @@ export async function validateShareToken(
           photos: true,
           church: {
             select: { name: true },
+          },
+          shareTokens: {
+            select: { type: true },
           },
         },
       },
@@ -51,12 +54,15 @@ export async function validateShareToken(
     throw new ApiError(401, "Token has expired", "TOKEN_EXPIRED")
   }
 
-  if (requiredType && shareToken.type !== requiredType) {
-    throw new ApiError(
-      403,
-      `This operation requires a ${requiredType} token`,
-      "WRONG_TOKEN_TYPE"
-    )
+  if (requiredType) {
+    const allowedTypes = Array.isArray(requiredType) ? requiredType : [requiredType]
+    if (!allowedTypes.includes(shareToken.type)) {
+      throw new ApiError(
+        403,
+        `This operation requires a ${allowedTypes.join(" or ")} token`,
+        "WRONG_TOKEN_TYPE"
+      )
+    }
   }
 
   // Update usage stats
@@ -105,7 +111,7 @@ export async function createShareToken(options: CreateShareTokenOptions) {
   })
 
   const baseUrl = process.env.APP_URL || "http://localhost:3000"
-  const urlPath = type === "VALIDATOR" ? "v" : "d"
+  const urlPath = type === "MEDIA" ? "d" : "v"
 
   return {
     ...shareToken,
@@ -121,4 +127,14 @@ export async function createEventShareToken(
   expiresInDays?: number
 ) {
   return createShareToken({ eventId, type, label, expiresInDays })
+}
+
+// ============================================
+// PREVALIDATION HELPERS
+// ============================================
+
+export function isPrevalidationActive(
+  shareTokens: { type: TokenType }[]
+): boolean {
+  return shareTokens.some((t) => t.type === "PREVALIDATOR")
 }

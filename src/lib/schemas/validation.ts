@@ -19,7 +19,10 @@ export const ValidationEventResponseSchema = z
       pending: z.number().int(),
       approved: z.number().int(),
       rejected: z.number().int(),
+      prevalidated: z.number().int().optional(),
+      prerejected: z.number().int().optional(),
     }),
+    tokenType: z.enum(["VALIDATOR", "PREVALIDATOR"]).optional(),
   })
   .openapi("ValidationEventResponse")
 
@@ -33,7 +36,7 @@ export const SubmitValidationSchema = z
       .array(
         z.object({
           photoId: z.string().cuid2(),
-          status: z.enum(["APPROVED", "REJECTED"]),
+          status: z.enum(["APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED", "PENDING"]),
         })
       )
       .min(1),

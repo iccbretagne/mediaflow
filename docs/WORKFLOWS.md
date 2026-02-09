@@ -75,25 +75,111 @@ DRAFT ──► IN_REVIEW ──► FINAL_APPROVED
 
 ---
 
-## 3. Comparaison
+## 3. Workflow optionnel : Prévalidation des photos
 
-| Aspect | Photos (actuel) | Visuels & Vidéos (cible) |
-|--------|----------------|--------------------------|
-| Conteneur | Event | Event ou Project |
-| Upload | FormData < 50 Mo | Presigned URL (jusqu'à 500 Mo) |
-| Statuts | PENDING → APPROVED ↔ REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED / REJECTED (réversible) / REVISION_REQUESTED (boucle) |
-| Versioning | Non | Oui (MediaVersion) |
-| Commentaires | Non | Oui (général + timecode vidéo) |
-| Validation UX | Swipe mobile | ReviewModal (viewer + commentaires + actions) |
-| Rétention | Illimitée | Configurable (défaut 30 jours pour vidéos) |
+Étape de filtrage optionnelle avant la validation définitive. Permet à une personne de confiance de faire un premier tri des photos avant que le pasteur/responsable ne valide.
+
+### Activation
+
+La prévalidation est **activée automatiquement** lors de la création d'un lien de partage de type `PREVALIDATOR`. Tant que la prévalidation n'est pas terminée (photos PENDING restantes), la création de liens VALIDATOR ou MEDIA est bloquée.
+
+### Flux avec prévalidation
+
+```
+Équipe Photo              Prévalidateur                Pasteur/Responsable         Équipe Média
+    │                          │                              │                         │
+    │  Upload photos           │                              │                         │
+    │──────► [PENDING]         │                              │                         │
+    │                          │                              │                         │
+    │  Créer lien PREVALIDATOR │                              │                         │
+    │─────────────────────────►│                              │                         │
+    │                          │  Swipe (prevalidate/prereject)                         │
+    │                          │──────► [PREVALIDATED]        │                         │
+    │                          │──────► [PREREJECTED]         │                         │
+    │                          │        (masquée)             │                         │
+    │                          │                              │                         │
+    │  ◄── Prévalidation terminée (0 PENDING)                 │                         │
+    │                          │                              │                         │
+    │  Créer lien VALIDATOR ───────────────────────────────►│                         │
+    │                          │                              │  Swipe (approve/reject) │
+    │                          │                              │──────► [APPROVED] ─────►│
+    │                          │                              │──────► [REJECTED]       │ Télécharge
+    │                          │                              │                         │◄── /d/[token]
+```
+
+### Machine à états (avec prévalidation)
+
+```
+                    ┌──────────────────────────────────────┐
+                    │                                      │
+                    ▼                                      │
+PENDING ──► PREVALIDATED ──► APPROVED ◄──► REJECTED       │
+    │                    └─► REJECTED                      │
+    │                                                      │
+    └──► PREREJECTED (terminal, masquée) ──────────────────┘
+                    │
+                    └──► PENDING (annulation possible)
+```
+
+### Règles métier
+
+| Règle | Description |
+|-------|-------------|
+| **Activation** | Création d'un token PREVALIDATOR active le mode |
+| **Blocage** | Impossible de créer VALIDATOR/MEDIA tant que photos PENDING existent |
+| **Visibilité prévalidateur** | Voit uniquement les photos `PENDING` |
+| **Visibilité validateur** | Voit uniquement les photos `PREVALIDATED` (PREREJECTED masquées) |
+| **Annulation** | Le prévalidateur peut re-switcher ses décisions |
+| **Suppression token** | Les photos gardent leur statut (pas de rollback) |
+| **Unicité** | Un seul token PREVALIDATOR par événement |
+| **Transparence** | Le validateur final ne sait pas qu'il y a eu prévalidation |
+
+### Nouveaux statuts photo
+
+| Statut | Description |
+|--------|-------------|
+| `PREVALIDATED` | Photo gardée après prévalidation, en attente de validation finale |
+| `PREREJECTED` | Photo écartée lors de la prévalidation (terminal, masquée) |
+
+### Nouveau type de token
+
+| Type | Description |
+|------|-------------|
+| `PREVALIDATOR` | Accès prévalidation (lecture photos PENDING + modification statut vers PREVALIDATED/PREREJECTED) |
 
 ---
 
-## 4. Coexistence des deux flux
+## 4. Comparaison
 
-Le workflow photo par swipe **reste inchangé**. Les deux flux coexistent via le champ `Media.type` :
+| Aspect | Photos (sans prévalidation) | Photos (avec prévalidation) | Visuels & Vidéos |
+|--------|----------------------------|----------------------------|------------------|
+| Conteneur | Event | Event | Event ou Project |
+| Upload | FormData < 50 Mo | FormData < 50 Mo | Presigned URL (jusqu'à 500 Mo) |
+| Statuts | PENDING → APPROVED ↔ REJECTED | PENDING → PREVALIDATED/PREREJECTED → APPROVED ↔ REJECTED | DRAFT → IN_REVIEW → FINAL_APPROVED / REJECTED / REVISION_REQUESTED |
+| Étapes validation | 1 (validateur) | 2 (prévalidateur + validateur) | 1+ (révisions possibles) |
+| Versioning | Non | Non | Oui (MediaVersion) |
+| Commentaires | Non | Non | Oui (général + timecode vidéo) |
+| Validation UX | Swipe mobile | Swipe mobile (2 étapes) | ReviewModal |
+| Rétention | Illimitée | Illimitée | Configurable (défaut 30 jours) |
 
-- `PHOTO` → workflow swipe (PENDING / APPROVED / REJECTED)
+---
+
+## 5. Coexistence des flux
+
+Les différents workflows coexistent :
+
+### Photos (table `Photo`)
+
+- **Sans prévalidation** : workflow swipe simple (PENDING → APPROVED/REJECTED)
+- **Avec prévalidation** : workflow en 2 étapes (PENDING → PREVALIDATED/PREREJECTED → APPROVED/REJECTED)
+
+La prévalidation est activée par la présence d'un token `PREVALIDATOR` sur l'événement.
+
+### Visuels & Vidéos (table `Media`)
+
+Via le champ `Media.type` :
+
+- `PHOTO` → workflow swipe (PENDING / APPROVED / REJECTED) - *note: table Media pour futures photos*
 - `VISUAL` / `VIDEO` → workflow révision (DRAFT / IN_REVIEW / REVISION_REQUESTED / REJECTED / FINAL_APPROVED)
 
 La transition de statut est contrôlée par la route `PATCH /api/media/[id]/status` qui applique la machine à états correspondante selon le type de média.

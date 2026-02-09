@@ -8,7 +8,7 @@ import {
   ApiError,
 } from "@/lib/api-utils"
 import { SubmitValidationSchema, TokenParamSchema } from "@/lib/schemas"
-import { validateShareToken } from "@/lib/tokens"
+import { validateShareToken, isPrevalidationActive } from "@/lib/tokens"
 import { getSignedThumbnailUrl, getSignedOriginalUrl } from "@/lib/s3"
 
 type RouteParams = { params: Promise<{ token: string }> }
@@ -41,13 +41,33 @@ function isValidationItem(item: ValidationItem | null): item is ValidationItem {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { token } = validateParams(await params, TokenParamSchema)
-    const shareToken = await validateShareToken(token, "VALIDATOR")
+    const shareToken = await validateShareToken(token, ["VALIDATOR", "PREVALIDATOR"])
 
+    const isPrevalidator = shareToken.type === "PREVALIDATOR"
     const event = shareToken.event
 
     if (event) {
+      const prevalidationActive = isPrevalidationActive(event.shareTokens)
+
+      // Determine which statuses to show based on token type
+      let statusFilter: string[]
+      if (isPrevalidator) {
+        // Prevalidator sees only PENDING photos
+        statusFilter = ["PENDING"]
+      } else if (prevalidationActive) {
+        // Validator with prevalidation active: sees only PREVALIDATED photos
+        statusFilter = ["PREVALIDATED"]
+      } else {
+        // Validator without prevalidation: sees everything except PREREJECTED
+        statusFilter = ["PENDING", "PREVALIDATED", "APPROVED", "REJECTED"]
+      }
+
       const media = await prisma.media.findMany({
-        where: { eventId: event.id, type: "PHOTO" },
+        where: {
+          eventId: event.id,
+          type: "PHOTO",
+          status: { in: statusFilter as any },
+        },
         include: {
           versions: { orderBy: { versionNumber: "desc" }, take: 1 },
         },
@@ -56,13 +76,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const photosWithUrls = await Promise.all(
         media.map(async (m) => {
           const latest = m.versions[0]
-          const safeStatus = m.status === "APPROVED" || m.status === "REJECTED" ? m.status : "PENDING"
+          // For validator with prevalidation: show PREVALIDATED as PENDING for transparency
+          let displayStatus: string
+          if (!isPrevalidator && prevalidationActive && m.status === "PREVALIDATED") {
+            displayStatus = "PENDING"
+          } else if (m.status === "APPROVED" || m.status === "REJECTED") {
+            displayStatus = m.status
+          } else {
+            displayStatus = "PENDING"
+          }
           return {
             id: m.id,
             type: "PHOTO",
             filename: m.filename,
             thumbnailUrl: latest ? await getSignedThumbnailUrl(latest.thumbnailKey) : "",
-            status: safeStatus,
+            status: displayStatus,
             width: m.width,
             height: m.height,
             uploadedAt: m.createdAt.toISOString(),
@@ -71,11 +99,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         })
       )
 
+      // Get all media for stats (unfiltered)
+      const allMedia = await prisma.media.findMany({
+        where: { eventId: event.id, type: "PHOTO" },
+        select: { status: true },
+      })
+
       const stats = {
-        total: media.length,
-        pending: media.filter((p) => p.status === "PENDING").length,
-        approved: media.filter((p) => p.status === "APPROVED").length,
-        rejected: media.filter((p) => p.status === "REJECTED").length,
+        total: allMedia.length,
+        pending: allMedia.filter((p) => p.status === "PENDING").length,
+        approved: allMedia.filter((p) => p.status === "APPROVED").length,
+        rejected: allMedia.filter((p) => p.status === "REJECTED").length,
+        ...(prevalidationActive || isPrevalidator
+          ? {
+              prevalidated: allMedia.filter((p) => p.status === "PREVALIDATED").length,
+              prerejected: allMedia.filter((p) => p.status === "PREREJECTED").length,
+            }
+          : {}),
       }
 
       return successResponse({
@@ -87,6 +127,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
         photos: photosWithUrls,
         stats,
+        tokenType: shareToken.type as "VALIDATOR" | "PREVALIDATOR",
       })
     }
 
@@ -165,8 +206,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { token } = validateParams(await params, TokenParamSchema)
-    const shareToken = await validateShareToken(token, "VALIDATOR")
+    const shareToken = await validateShareToken(token, ["VALIDATOR", "PREVALIDATOR"])
     const body = await validateBody(request, SubmitValidationSchema)
+
+    const isPrevalidator = shareToken.type === "PREVALIDATOR"
+
+    // Validate allowed statuses per token type
+    const allowedStatuses = isPrevalidator
+      ? ["PREVALIDATED", "PREREJECTED", "PENDING"]
+      : ["APPROVED", "REJECTED"]
+
+    for (const decision of body.decisions) {
+      if (!allowedStatuses.includes(decision.status)) {
+        throw new ApiError(
+          403,
+          `Status "${decision.status}" is not allowed for ${shareToken.type} tokens`,
+          "FORBIDDEN_STATUS"
+        )
+      }
+    }
 
     const eventId = shareToken.eventId
 
@@ -207,13 +265,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         rejected: allPhotos.filter((p) => p.status === "REJECTED").length,
       }
 
-      // Update event status if all photos are reviewed
-      const pendingCount = allPhotos.filter((p) => p.status === "PENDING").length
-      if (pendingCount === 0) {
-        await prisma.event.update({
-          where: { id: eventId },
-          data: { status: "REVIEWED" },
-        })
+      // Auto-transition event status
+      if (!isPrevalidator) {
+        const prevalidationActive = shareToken.event
+          ? isPrevalidationActive(shareToken.event.shareTokens)
+          : false
+
+        // Determine what constitutes "all reviewed"
+        const remainingCount = prevalidationActive
+          ? allPhotos.filter((p) => p.status === "PREVALIDATED").length
+          : allPhotos.filter((p) => p.status === "PENDING").length
+
+        if (remainingCount === 0) {
+          await prisma.event.update({
+            where: { id: eventId },
+            data: { status: "REVIEWED" },
+          })
+        }
       }
 
       return successResponse({
