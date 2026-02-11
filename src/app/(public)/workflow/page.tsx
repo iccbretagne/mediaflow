@@ -19,6 +19,7 @@ export default function WorkflowPage() {
           --prod: #7c3aed;
           --valid: #dc2626;
           --regie: #0d9488;
+          --preval: #d97706;
           --ok: #16a34a;
           --reject: #dc2626;
           --radius: 16px;
@@ -243,6 +244,13 @@ export default function WorkflowPage() {
           border-color: var(--regie);
           color: var(--regie);
         }
+        .step[data-actor="preval"] .card::before {
+          background: var(--preval);
+        }
+        .step[data-actor="preval"] .node {
+          border-color: var(--preval);
+          color: var(--preval);
+        }
         .step[data-actor="system"] .card::before {
           background: var(--accent);
         }
@@ -281,6 +289,10 @@ export default function WorkflowPage() {
         .step[data-actor="regie"] .who {
           background: #ccfbf1;
           color: var(--regie);
+        }
+        .step[data-actor="preval"] .who {
+          background: #fef3c7;
+          color: var(--preval);
         }
         .step[data-actor="system"] .who {
           background: #dbeafe;
@@ -475,11 +487,14 @@ export default function WorkflowPage() {
         .step:nth-child(6) {
           animation-delay: 0.6s;
         }
+        .step:nth-child(7) {
+          animation-delay: 0.7s;
+        }
         .decision {
-          animation-delay: 0.45s;
+          animation-delay: 0.55s;
         }
         .finale {
-          animation-delay: 0.7s;
+          animation-delay: 0.8s;
         }
         @keyframes fadeUp {
           to {
@@ -514,6 +529,15 @@ export default function WorkflowPage() {
             <div className="meta">
               Équipe Production Visuelle
               <small>Upload &amp; traitement</small>
+            </div>
+          </div>
+          <div className="actor">
+            <div className="icon" style={{ background: "var(--preval)" }}>
+              🔍
+            </div>
+            <div className="meta">
+              Prévalidateur
+              <small>Premier tri (optionnel)</small>
             </div>
           </div>
           <div className="actor">
@@ -606,19 +630,23 @@ export default function WorkflowPage() {
           <div className="step left" data-actor="system">
             <div className="card">
               <div className="who">⚙️ MediaFlow</div>
-              <h3>③ Générer le lien de validation</h3>
+              <h3>③ Générer les liens de partage</h3>
               <p>
-                MediaFlow génère un <strong>lien unique de validation</strong> —
-                un URL partageable qui ne nécessite aucun compte. L&apos;admin
-                envoie ce lien au validateur par WhatsApp, SMS ou email.
+                MediaFlow génère des <strong>liens uniques</strong> —
+                des URL partageables qui ne nécessitent aucun compte. L&apos;admin
+                peut créer un lien de <strong>prévalidation</strong> (optionnel)
+                et/ou un lien de <strong>validation</strong>, puis les envoyer
+                par WhatsApp, SMS ou email.
               </p>
               <div className="detail">
                 <code>
                   🔗 Lien unique → mediaflow.iccrennes.fr/v/abc123
                   <br />
-                  📲 Envoi → WhatsApp / SMS / Email
+                  🔍 Prévalidation → Premier tri (optionnel)
                   <br />
-                  🔒 Pas de compte requis pour le validateur
+                  ✋ Validation → Décision finale
+                  <br />
+                  📲 Envoi → WhatsApp / SMS / Email
                 </code>
               </div>
             </div>
@@ -634,21 +662,54 @@ export default function WorkflowPage() {
             </svg>
           </div>
 
-          {/* STEP 4 */}
-          <div className="step right" data-actor="valid">
+          {/* STEP 4 — PREVALIDATION (optionnel) */}
+          <div className="step right" data-actor="preval">
             <div className="spacer" />
             <div className="connector">
               <div className="node">4</div>
             </div>
             <div className="card">
+              <div className="who">🔍 Prévalidateur</div>
+              <h3>④ Prévalidation — premier tri (optionnel)</h3>
+              <p>
+                Si un lien de prévalidation a été créé, une personne de confiance
+                fait un <strong>premier tri</strong> des médias avant la
+                validation finale. Les médias écartés sont masqués pour le
+                validateur.
+              </p>
+              <div className="detail">
+                <code>
+                  👉 Swipe droite → Garder (prévalidé)
+                  <br />
+                  👈 Swipe gauche → Écarter (masqué)
+                  <br />
+                  🔄 Décisions réversibles
+                  <br />
+                  🚫 Étape optionnelle — peut être ignorée
+                </code>
+              </div>
+            </div>
+          </div>
+
+          <div className="arrow-down">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 14l-5-5h3V4h4v5h3l-5 5z" />
+            </svg>
+          </div>
+
+          {/* STEP 5 */}
+          <div className="step left" data-actor="valid">
+            <div className="card">
               <div className="who">✋ Pasteure / Responsable</div>
-              <h3>④ Valider ou rejeter chaque média</h3>
+              <h3>⑤ Valider ou rejeter chaque média</h3>
               <p>
                 Le validateur ouvre le lien sur son{" "}
                 <strong>téléphone ou son ordinateur</strong> — l&apos;interface
                 est intuitive dans les deux cas.{" "}
                 <strong>Swipe à droite</strong> pour approuver,{" "}
                 <strong>swipe à gauche</strong> pour rejeter.
+                {" "}Si une prévalidation a eu lieu, seuls les médias gardés sont
+                visibles.
               </p>
               <div className="detail">
                 <code>
@@ -662,6 +723,10 @@ export default function WorkflowPage() {
                 </code>
               </div>
             </div>
+            <div className="connector">
+              <div className="node">5</div>
+            </div>
+            <div className="spacer" />
           </div>
 
           <div className="arrow-down">
@@ -699,11 +764,15 @@ export default function WorkflowPage() {
             </svg>
           </div>
 
-          {/* STEP 5 */}
-          <div className="step left" data-actor="regie">
+          {/* STEP 6 */}
+          <div className="step right" data-actor="regie">
+            <div className="spacer" />
+            <div className="connector">
+              <div className="node">6</div>
+            </div>
             <div className="card">
               <div className="who">🖥️ Régie technique</div>
-              <h3>⑤ Télécharger les médias validés</h3>
+              <h3>⑥ Télécharger les médias validés</h3>
               <p>
                 La régie accède au <strong>centre de téléchargement</strong> de
                 l&apos;événement. Seuls les médias approuvés sont disponibles, en
@@ -719,10 +788,6 @@ export default function WorkflowPage() {
                 </code>
               </div>
             </div>
-            <div className="connector">
-              <div className="node">5</div>
-            </div>
-            <div className="spacer" />
           </div>
 
           <div className="arrow-down">
@@ -731,15 +796,11 @@ export default function WorkflowPage() {
             </svg>
           </div>
 
-          {/* STEP 6 */}
-          <div className="step right" data-actor="regie">
-            <div className="spacer" />
-            <div className="connector">
-              <div className="node">6</div>
-            </div>
+          {/* STEP 7 */}
+          <div className="step left" data-actor="regie">
             <div className="card">
               <div className="who">🖥️ Régie / Communication</div>
-              <h3>⑥ Diffuser les contenus</h3>
+              <h3>⑦ Diffuser les contenus</h3>
               <p>
                 Les médias validés sont intégrés aux supports de communication :
                 projection en culte, réseaux sociaux, site web, streaming.
@@ -754,6 +815,10 @@ export default function WorkflowPage() {
                 </code>
               </div>
             </div>
+            <div className="connector">
+              <div className="node">7</div>
+            </div>
+            <div className="spacer" />
           </div>
 
           {/* FINALE */}
