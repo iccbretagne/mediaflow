@@ -12,7 +12,6 @@ import { CompleteMultipartUploadSchema } from "@/lib/schemas"
 import {
   completeMultipartUpload,
   abortMultipartUpload,
-  fileExists,
   getFileHead,
   getFileBytes,
   moveFile,

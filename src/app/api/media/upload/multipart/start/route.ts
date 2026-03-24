@@ -9,7 +9,6 @@ import {
 } from "@/lib/api-utils"
 import {
   StartMultipartUploadSchema,
-  MAX_FILE_SIZE,
   MULTIPART_CHUNK_SIZE,
   MULTIPART_URL_EXPIRY,
 } from "@/lib/schemas"
