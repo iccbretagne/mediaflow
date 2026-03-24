@@ -39,8 +39,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         // Prevalidator sees only PENDING photos
         statusFilter = ["PENDING"]
       } else if (prevalidationActive) {
-        // Validator with prevalidation active: sees only PREVALIDATED photos
-        statusFilter = ["PREVALIDATED"]
+        // Validator with prevalidation active: sees PREVALIDATED + already validated
+        statusFilter = ["PREVALIDATED", "APPROVED", "REJECTED"]
       } else {
         // Validator without prevalidation: sees everything except PREREJECTED
         statusFilter = ["PENDING", "PREVALIDATED", "APPROVED", "REJECTED"]
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (isPrevalidator) {
       projectStatusFilter = ["PENDING"]
     } else if (projectPrevalidationActive) {
-      projectStatusFilter = ["PREVALIDATED"]
+      projectStatusFilter = ["PREVALIDATED", "APPROVED", "REJECTED", "FINAL_APPROVED"]
     }
 
     const filteredMedia = projectStatusFilter
