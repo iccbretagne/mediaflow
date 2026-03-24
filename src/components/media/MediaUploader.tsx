@@ -33,6 +33,11 @@ interface MediaUploaderProps {
 const VISUAL_MIME_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "application/pdf"]
 const VIDEO_MIME_TYPES = ["video/mp4", "video/quicktime", "video/webm"]
 
+const CHUNK_SIZE = 10 * 1024 * 1024 // 10 MB
+const MULTIPART_THRESHOLD = CHUNK_SIZE // Use multipart for files > 10 MB
+const MAX_RETRIES = 3
+const RETRY_BASE_DELAY = 1000 // 1 second
+
 function getMimeTypes(acceptedTypes: ("VISUAL" | "VIDEO")[]): string {
   const mimes: string[] = []
   if (acceptedTypes.includes("VISUAL")) mimes.push(...VISUAL_MIME_TYPES)
@@ -117,15 +122,117 @@ export function MediaUploader({
     })
   }
 
-  async function uploadFile(file: File): Promise<UploadedMedia> {
-    const mediaType = getMediaType(file.type)
-    if (!mediaType) {
-      throw new Error(`Type de fichier non supporté: ${file.type}`)
+  // Upload a single chunk with retry logic
+  async function uploadChunkWithRetry(
+    url: string,
+    chunk: Blob,
+    onProgress: (loaded: number) => void
+  ): Promise<string> {
+    let lastError: Error | null = null
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const etag = await new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest()
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              onProgress(e.loaded)
+            }
+          }
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const etag = xhr.getResponseHeader("ETag")
+              if (!etag) {
+                reject(new Error("No ETag in response"))
+                return
+              }
+              resolve(etag)
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`))
+            }
+          }
+
+          xhr.onerror = () => reject(new Error("Network error during upload"))
+          xhr.ontimeout = () => reject(new Error("Upload timeout"))
+
+          xhr.open("PUT", url)
+          xhr.send(chunk)
+        })
+
+        return etag
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Unknown error")
+
+        if (attempt < MAX_RETRIES - 1) {
+          // Reset progress for this chunk on retry
+          onProgress(0)
+          // Exponential backoff: 1s, 2s, 4s
+          const delay = RETRY_BASE_DELAY * Math.pow(2, attempt)
+          await new Promise((r) => setTimeout(r, delay))
+        }
+      }
     }
 
-    updateUpload(file.name, { status: "uploading", progress: 0 })
+    throw lastError || new Error("Upload failed after retries")
+  }
 
-    // Step 1: Request presigned URL
+  // Multipart upload for large files
+  async function uploadFileMultipart(file: File, mediaType: MediaType): Promise<{ uploadId: string; completedParts: { partNumber: number; etag: string }[] }> {
+    // Step 1: Start multipart upload
+    const startRes = await fetch("/api/media/upload/multipart/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+        size: file.size,
+        type: mediaType,
+        projectId,
+        eventId,
+      }),
+    })
+
+    if (!startRes.ok) {
+      const error = await startRes.json()
+      throw new Error(error.error?.message || "Erreur lors de l'initialisation de l'upload")
+    }
+
+    const { data: startData } = await startRes.json()
+    const { uploadId, parts: partUrls } = startData as {
+      uploadId: string
+      parts: { partNumber: number; url: string }[]
+    }
+
+    // Step 2: Upload chunks sequentially with retry
+    const totalSize = file.size
+    const completedParts: { partNumber: number; etag: string }[] = []
+    let totalBytesUploaded = 0
+
+    for (const { partNumber, url } of partUrls) {
+      const start = (partNumber - 1) * CHUNK_SIZE
+      const end = Math.min(start + CHUNK_SIZE, file.size)
+      const chunk = file.slice(start, end)
+      const chunkBaseBytes = totalBytesUploaded
+
+      const etag = await uploadChunkWithRetry(url, chunk, (loaded) => {
+        const progress = Math.round(((chunkBaseBytes + loaded) / totalSize) * 100)
+        updateUpload(file.name, { progress: Math.min(progress, 99) })
+      })
+
+      totalBytesUploaded += chunk.size
+      completedParts.push({ partNumber, etag })
+
+      const progress = Math.round((totalBytesUploaded / totalSize) * 100)
+      updateUpload(file.name, { progress: Math.min(progress, 99) })
+    }
+
+    return { uploadId, completedParts }
+  }
+
+  // Single PUT upload for small files (existing flow)
+  async function uploadFileSingle(file: File, mediaType: MediaType): Promise<{ uploadId: string }> {
     const signRes = await fetch("/api/media/upload/sign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -147,7 +254,6 @@ export function MediaUploader({
     const { data: signData } = await signRes.json()
     const { uploadId, url } = signData
 
-    // Step 2: Upload to S3 with progress tracking
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
 
@@ -173,27 +279,57 @@ export function MediaUploader({
       xhr.send(file)
     })
 
+    return { uploadId }
+  }
+
+  async function uploadFile(file: File): Promise<UploadedMedia> {
+    const mediaType = getMediaType(file.type)
+    if (!mediaType) {
+      throw new Error(`Type de fichier non supporté: ${file.type}`)
+    }
+
+    updateUpload(file.name, { status: "uploading", progress: 0 })
+
+    const useMultipart = file.size > MULTIPART_THRESHOLD
+    let uploadId: string
+    let completedParts: { partNumber: number; etag: string }[] | undefined
+
+    if (useMultipart) {
+      // Multipart upload for large files
+      const result = await uploadFileMultipart(file, mediaType)
+      uploadId = result.uploadId
+      completedParts = result.completedParts
+    } else {
+      // Single PUT for small files
+      const result = await uploadFileSingle(file, mediaType)
+      uploadId = result.uploadId
+    }
+
     updateUpload(file.name, { status: "processing", progress: 100 })
 
-    // Step 3: Extract thumbnail for videos
+    // Extract thumbnail for videos
     let thumbnailDataUrl: string | undefined
     if (mediaType === "VIDEO") {
       try {
         thumbnailDataUrl = await extractVideoThumbnail(file)
       } catch (e) {
         console.error("Failed to extract video thumbnail:", e)
-        // Continue without thumbnail - server will fail with helpful error
       }
     }
 
-    // Step 4: Confirm upload
-    const confirmRes = await fetch("/api/media/upload/confirm", {
+    // Confirm/complete upload
+    const confirmUrl = useMultipart
+      ? "/api/media/upload/multipart/complete"
+      : "/api/media/upload/confirm"
+
+    const confirmBody = useMultipart
+      ? { uploadId, parts: completedParts, thumbnailDataUrl }
+      : { uploadId, thumbnailDataUrl }
+
+    const confirmRes = await fetch(confirmUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uploadId,
-        thumbnailDataUrl,
-      }),
+      body: JSON.stringify(confirmBody),
     })
 
     if (!confirmRes.ok) {

@@ -21,6 +21,10 @@ export interface UploadSession {
   s3Key: string
   createdAt: Date
   expiresAt: Date
+  // Multipart upload fields
+  isMultipart?: boolean
+  s3UploadId?: string
+  totalParts?: number
 }
 
 // ============================================
@@ -67,6 +71,9 @@ export function createUploadSession(params: {
   projectId?: string
   s3Key: string
   expirySeconds: number
+  isMultipart?: boolean
+  s3UploadId?: string
+  totalParts?: number
 }): UploadSession {
   const id = generateId()
   const now = new Date()
@@ -84,6 +91,9 @@ export function createUploadSession(params: {
     s3Key: params.s3Key,
     createdAt: now,
     expiresAt,
+    isMultipart: params.isMultipart,
+    s3UploadId: params.s3UploadId,
+    totalParts: params.totalParts,
   }
 
   sessions.set(id, session)
