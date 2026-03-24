@@ -8,6 +8,9 @@ import { MediaTypeEnum, VISUAL_MIME_TYPES, VIDEO_MIME_TYPES } from "./media"
 export const MAX_FILE_SIZE = (Number(process.env.MAX_FILE_SIZE_MB) || 1024) * 1024 * 1024 // default 1 GB
 export const MAX_VISUAL_SIZE = (Number(process.env.MAX_VISUAL_SIZE_MB) || 50) * 1024 * 1024 // default 50 MB
 export const PRESIGNED_URL_EXPIRY = 15 * 60 // 15 minutes in seconds
+export const MULTIPART_CHUNK_SIZE = 10 * 1024 * 1024 // 10 MB
+export const MULTIPART_THRESHOLD = MULTIPART_CHUNK_SIZE // Use multipart for files > 10 MB
+export const MULTIPART_URL_EXPIRY = 60 * 60 // 1 hour (longer for slow connections)
 
 // ============================================
 // REQUEST PRESIGNED URL
@@ -82,6 +85,77 @@ export const ConfirmUploadResponseSchema = z
   .openapi("ConfirmUploadResponse")
 
 // ============================================
+// MULTIPART UPLOAD
+// ============================================
+
+export const StartMultipartUploadSchema = z
+  .object({
+    filename: z.string().min(1).max(255).openapi({ example: "video-intro.mp4" }),
+    contentType: z.string().min(1).max(100).openapi({ example: "video/mp4" }),
+    size: z
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_FILE_SIZE)
+      .openapi({ example: 104857600, description: "File size in bytes (max 1 GB)" }),
+    type: MediaTypeEnum.openapi({ example: "VIDEO" }),
+    eventId: z.string().cuid2().optional(),
+    projectId: z.string().cuid2().optional(),
+  })
+  .refine((data) => Boolean(data.eventId) !== Boolean(data.projectId), {
+    message: "Exactly one of eventId or projectId must be provided",
+  })
+  .refine(
+    (data) => {
+      if (data.type === "VISUAL") {
+        return VISUAL_MIME_TYPES.includes(data.contentType as typeof VISUAL_MIME_TYPES[number])
+      }
+      if (data.type === "VIDEO") {
+        return VIDEO_MIME_TYPES.includes(data.contentType as typeof VIDEO_MIME_TYPES[number])
+      }
+      return false
+    },
+    {
+      message: "Content type does not match the specified media type",
+    }
+  )
+  .openapi("StartMultipartUploadRequest")
+
+export const StartMultipartUploadResponseSchema = z
+  .object({
+    uploadId: z.string().cuid2(),
+    parts: z.array(
+      z.object({
+        partNumber: z.number().int().min(1),
+        url: z.string().url(),
+      })
+    ),
+    expiresAt: z.string().datetime(),
+  })
+  .openapi("StartMultipartUploadResponse")
+
+export const CompleteMultipartUploadSchema = z
+  .object({
+    uploadId: z.string().cuid2(),
+    parts: z
+      .array(
+        z.object({
+          partNumber: z.number().int().min(1),
+          etag: z.string().min(1),
+        })
+      )
+      .min(1),
+    thumbnailDataUrl: z
+      .string()
+      .optional()
+      .openapi({
+        description: "Base64 data URL for video thumbnail (extracted client-side)",
+        example: "data:image/webp;base64,...",
+      }),
+  })
+  .openapi("CompleteMultipartUploadRequest")
+
+// ============================================
 // TYPES
 // ============================================
 
@@ -89,3 +163,5 @@ export type RequestPresignedUrl = z.infer<typeof RequestPresignedUrlSchema>
 export type PresignedUrlResponse = z.infer<typeof PresignedUrlResponseSchema>
 export type ConfirmUpload = z.infer<typeof ConfirmUploadSchema>
 export type ConfirmUploadResponse = z.infer<typeof ConfirmUploadResponseSchema>
+export type StartMultipartUpload = z.infer<typeof StartMultipartUploadSchema>
+export type CompleteMultipartUpload = z.infer<typeof CompleteMultipartUploadSchema>

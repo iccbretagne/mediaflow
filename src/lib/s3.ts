@@ -5,6 +5,10 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   CopyObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
@@ -257,6 +261,76 @@ export async function deleteFile(key: string): Promise<void> {
 
 export async function deleteFiles(keys: string[]): Promise<void> {
   await Promise.all(keys.map((key) => deleteFile(key)))
+}
+
+// ============================================
+// MULTIPART UPLOAD
+// ============================================
+
+export async function createMultipartUpload(
+  key: string,
+  contentType: string
+): Promise<string> {
+  const command = new CreateMultipartUploadCommand({
+    Bucket: BUCKET,
+    Key: key,
+    ContentType: contentType,
+  })
+
+  const response = await s3Client.send(command)
+  if (!response.UploadId) {
+    throw new Error("Failed to create multipart upload: no UploadId returned")
+  }
+  return response.UploadId
+}
+
+export async function getSignedPartUrl(
+  key: string,
+  s3UploadId: string,
+  partNumber: number,
+  expiresIn: number
+): Promise<string> {
+  const command = new UploadPartCommand({
+    Bucket: BUCKET,
+    Key: key,
+    UploadId: s3UploadId,
+    PartNumber: partNumber,
+  })
+
+  return getSignedUrl(s3Client, command, { expiresIn })
+}
+
+export async function completeMultipartUpload(
+  key: string,
+  s3UploadId: string,
+  parts: { partNumber: number; etag: string }[]
+): Promise<void> {
+  const command = new CompleteMultipartUploadCommand({
+    Bucket: BUCKET,
+    Key: key,
+    UploadId: s3UploadId,
+    MultipartUpload: {
+      Parts: parts.map((p) => ({
+        PartNumber: p.partNumber,
+        ETag: p.etag,
+      })),
+    },
+  })
+
+  await s3Client.send(command)
+}
+
+export async function abortMultipartUpload(
+  key: string,
+  s3UploadId: string
+): Promise<void> {
+  const command = new AbortMultipartUploadCommand({
+    Bucket: BUCKET,
+    Key: key,
+    UploadId: s3UploadId,
+  })
+
+  await s3Client.send(command)
 }
 
 // ============================================
