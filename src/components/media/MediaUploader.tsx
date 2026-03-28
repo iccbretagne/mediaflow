@@ -62,30 +62,59 @@ async function extractVideoThumbnail(file: File): Promise<string> {
     video.muted = true
     video.playsInline = true
 
-    video.onloadeddata = () => {
-      // Seek to 1 second or 10% of duration, whichever is smaller
-      video.currentTime = Math.min(1, video.duration * 0.1)
-    }
-
     const objectUrl = URL.createObjectURL(file)
     if (!objectUrl.startsWith("blob:")) {
       reject(new Error("Invalid object URL"))
       return
     }
 
-    video.onseeked = () => {
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      ctx?.drawImage(video, 0, 0)
-
-      const dataUrl = canvas.toDataURL("image/webp", 0.8)
+    let settled = false
+    const cleanup = () => {
       URL.revokeObjectURL(objectUrl)
+    }
+
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        cleanup()
+        reject(new Error("Video thumbnail extraction timeout"))
+      }
+    }, 15000)
+
+    const captureFrame = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      canvas.width = video.videoWidth || 320
+      canvas.height = video.videoHeight || 240
+      ctx?.drawImage(video, 0, 0)
+      const dataUrl = canvas.toDataURL("image/webp", 0.8)
+      cleanup()
       resolve(dataUrl)
     }
 
+    video.onseeked = captureFrame
+
+    video.onloadedmetadata = () => {
+      // Seek to 1 second or 10% of duration, whichever is smaller
+      const duration = isFinite(video.duration) && video.duration > 0 ? video.duration : 0
+      const targetTime = Math.min(1, duration * 0.1)
+      if (targetTime === 0 || targetTime === video.currentTime) {
+        // No seek will happen — capture immediately on loadeddata
+        video.onseeked = null
+        video.onloadeddata = captureFrame
+      } else {
+        video.currentTime = targetTime
+      }
+    }
+
     video.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      reject(new Error("Could not load video"))
+      if (!settled) {
+        settled = true
+        clearTimeout(timeout)
+        cleanup()
+        reject(new Error("Could not load video"))
+      }
     }
 
     video.src = objectUrl
