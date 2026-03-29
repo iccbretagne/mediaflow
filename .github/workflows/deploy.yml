@@ -1,0 +1,148 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a deployer (ex: 0.5.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+    steps:
+      - run: echo "CI passed, deploy allowed"
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${{ github.event.workflow_run.head_branch }}"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check tag matches package.json
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if [ "${{ steps.version.outputs.version }}" != "$PKG" ]; then
+            echo "::error::Version mismatch: tag=${{ steps.version.outputs.version }} package.json=$PKG"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Package artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar czf "mediaflow-${VERSION}.tar.gz" \
+            .next/standalone .next/static \
+            prisma public package.json \
+            node_modules/.bin/prisma \
+            node_modules/prisma \
+            node_modules/.prisma
+          echo "Built mediaflow-${VERSION}.tar.gz"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mediaflow-${{ steps.version.outputs.version }}
+          path: mediaflow-${{ steps.version.outputs.version }}.tar.gz
+          retention-days: 14
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mediaflow-${{ needs.build.outputs.version }}
+
+      - name: Upload artifact to server
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: mediaflow-${{ needs.build.outputs.version }}.tar.gz
+          target: /tmp
+
+      - name: Deploy artifact via SSH
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: VERSION,DEPLOY_PATH
+          script: |
+            set -e
+            DEPLOY_PATH="${DEPLOY_PATH:-/opt/mediaflow}"
+
+            echo "Deploying v${VERSION}..."
+
+            # 1. Prepare release directory
+            mkdir -p "$DEPLOY_PATH/releases/mediaflow-${VERSION}"
+            cd "$DEPLOY_PATH/releases/mediaflow-${VERSION}"
+
+            # 2. Extract pre-built artifact
+            tar xzf "/tmp/mediaflow-${VERSION}.tar.gz"
+            rm "/tmp/mediaflow-${VERSION}.tar.gz"
+
+            # 3. Assemble standalone bundle (Next.js standalone output)
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+            ln -sf "$DEPLOY_PATH/shared/.env" .next/standalone/.env
+
+            # 4. Run migrations
+            set -a; source "$DEPLOY_PATH/shared/.env"; set +a
+            ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+
+            # 5. Activate release
+            ln -sfn "$DEPLOY_PATH/releases/mediaflow-${VERSION}" "$DEPLOY_PATH/current"
+
+            # 6. Restart
+            sudo systemctl restart mediaflow
+
+            # 7. Cleanup: keep last 3 releases
+            cd "$DEPLOY_PATH/releases"
+            ls -1dt mediaflow-*/ | tail -n +4 | xargs rm -rf || true
+
+            echo "Deploy v${VERSION} OK"
