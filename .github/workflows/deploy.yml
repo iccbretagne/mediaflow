@@ -60,6 +60,7 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+      - run: npm prune --omit=dev
 
       - name: Package artifact
         run: |
@@ -67,10 +68,7 @@ jobs:
           tar czf "mediaflow-${VERSION}.tar.gz" \
             .next/standalone .next/static \
             prisma public package.json \
-            node_modules/.bin/prisma \
-            node_modules/prisma \
-            node_modules/.prisma \
-            node_modules/@prisma
+            node_modules
           echo "Built mediaflow-${VERSION}.tar.gz"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
