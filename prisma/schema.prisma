@@ -313,13 +313,15 @@ enum TokenType {
   VALIDATOR    // Accès validation (lecture + modification status)
   MEDIA        // Accès téléchargement (lecture photos validées uniquement)
   PREVALIDATOR // Accès prévalidation (filtrage avant validation finale)
+  GALLERY      // Accès galerie (téléchargement photo par photo)
 }
 
 model ShareToken {
-  id    String    @id @default(cuid())
-  token String    @unique @db.VarChar(64)
-  type  TokenType
-  label String?   @db.VarChar(255) // Ex: "Pasteur Martin"
+  id     String    @id @default(cuid())
+  token  String    @unique @db.VarChar(64)
+  type   TokenType
+  label  String?   @db.VarChar(255) // Ex: "Pasteur Martin"
+  config Json?     // Configuration optionnelle (ex: { "onlyApproved": true })
 
   // Expiration
   expiresAt DateTime?

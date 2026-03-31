@@ -85,18 +85,27 @@ type CreateShareTokenOptions = {
   type: TokenType
   label?: string
   expiresInDays?: number
+  onlyApproved?: boolean
 } & (
   | { eventId: string; projectId?: never }
   | { projectId: string; eventId?: never }
 )
 
+function getTokenUrlPath(type: TokenType): string {
+  if (type === "MEDIA") return "d"
+  if (type === "GALLERY") return "g"
+  return "v"
+}
+
 export async function createShareToken(options: CreateShareTokenOptions) {
-  const { type, label, expiresInDays, eventId, projectId } = options
+  const { type, label, expiresInDays, onlyApproved, eventId, projectId } = options
 
   const token = generateToken()
   const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
     : null
+
+  const config = type === "GALLERY" ? { onlyApproved: onlyApproved ?? false } : null
 
   const shareToken = await prisma.shareToken.create({
     data: {
@@ -105,17 +114,17 @@ export async function createShareToken(options: CreateShareTokenOptions) {
       type,
       label,
       expiresAt,
+      ...(config && { config }),
       ...(eventId && { eventId }),
       ...(projectId && { projectId }),
     },
   })
 
   const baseUrl = process.env.APP_URL || "http://localhost:3000"
-  const urlPath = type === "MEDIA" ? "d" : "v"
 
   return {
     ...shareToken,
-    url: `${baseUrl}/${urlPath}/${token}`,
+    url: `${baseUrl}/${getTokenUrlPath(type)}/${token}`,
   }
 }
 
