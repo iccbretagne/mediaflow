@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, Button } from "@/components/ui"
 
-type TokenType = "VALIDATOR" | "MEDIA" | "PREVALIDATOR"
+type TokenType = "VALIDATOR" | "MEDIA" | "PREVALIDATOR" | "GALLERY"
 
 interface ShareToken {
   id: string
@@ -29,12 +29,14 @@ const tokenTypeLabels: Record<TokenType, string> = {
   PREVALIDATOR: "Prévalidation",
   VALIDATOR: "Validation",
   MEDIA: "Téléchargement",
+  GALLERY: "Galerie",
 }
 
 const tokenTypeDescriptions: Record<TokenType, string> = {
   PREVALIDATOR: "Permet de filtrer les photos avant la validation finale",
   VALIDATOR: "Permet de valider ou rejeter les photos",
-  MEDIA: "Permet de télécharger les photos validées",
+  MEDIA: "Permet de télécharger les photos validées (ZIP)",
+  GALLERY: "Galerie photo individuelle (téléchargement photo par photo)",
 }
 
 export default function SharePage({
@@ -55,6 +57,7 @@ export default function SharePage({
   const [formType, setFormType] = useState<TokenType>("VALIDATOR")
   const [formLabel, setFormLabel] = useState("")
   const [formExpires, setFormExpires] = useState("7")
+  const [formOnlyApproved, setFormOnlyApproved] = useState(false)
 
   // Derived state
   const hasPrevalidator = tokens.some((t) => t.type === "PREVALIDATOR")
@@ -106,6 +109,7 @@ export default function SharePage({
           type: formType,
           label: formLabel || undefined,
           expiresInDays: formExpires ? parseInt(formExpires) : undefined,
+          ...(formType === "GALLERY" && { onlyApproved: formOnlyApproved }),
         }),
       })
 
@@ -220,8 +224,8 @@ export default function SharePage({
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Type de lien
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {(["PREVALIDATOR", "VALIDATOR", "MEDIA"] as TokenType[]).map((type) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(["PREVALIDATOR", "VALIDATOR", "MEDIA", "GALLERY"] as TokenType[]).map((type) => {
                     const isDisabled =
                       (type === "PREVALIDATOR" && hasPrevalidator) ||
                       ((type === "VALIDATOR" || type === "MEDIA") && prevalidationInProgress)
@@ -261,6 +265,35 @@ export default function SharePage({
                   })}
                 </div>
               </div>
+
+              {/* Gallery config */}
+              {formType === "GALLERY" && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formOnlyApproved}
+                    onClick={() => setFormOnlyApproved((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 ${
+                      formOnlyApproved ? "bg-icc-violet" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+                        formOnlyApproved ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Photos validées uniquement</p>
+                    <p className="text-xs text-gray-500">
+                      {formOnlyApproved
+                        ? "Seules les photos approuvées seront visibles"
+                        : "Toutes les photos sont visibles (même non validées)"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Create error */}
               {createError && (
@@ -408,6 +441,8 @@ export default function SharePage({
                             ? "bg-amber-100 text-amber-700"
                             : token.type === "VALIDATOR"
                             ? "bg-purple-100 text-purple-700"
+                            : token.type === "GALLERY"
+                            ? "bg-green-100 text-green-700"
                             : "bg-blue-100 text-blue-700"
                         }`}
                       >

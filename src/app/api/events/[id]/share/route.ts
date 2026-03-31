@@ -9,7 +9,7 @@ import {
   ApiError,
 } from "@/lib/api-utils"
 import { CreateShareTokenSchema, Cuid2IdParamSchema } from "@/lib/schemas"
-import { createEventShareToken } from "@/lib/tokens"
+import { createShareToken } from "@/lib/tokens"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -70,12 +70,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const token = await createEventShareToken(
-      id,
-      body.type,
-      body.label,
-      body.expiresInDays
-    )
+    const token = await createShareToken({
+      eventId: id,
+      type: body.type,
+      label: body.label,
+      expiresInDays: body.expiresInDays,
+      onlyApproved: body.onlyApproved,
+    })
 
     return successResponse(
       {
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       tokens.map((t) => ({
         id: t.id,
         token: t.token,
-        url: `${baseUrl}/${t.type === "MEDIA" ? "d" : "v"}/${t.token}`,
+        url: `${baseUrl}/${t.type === "MEDIA" ? "d" : t.type === "GALLERY" ? "g" : "v"}/${t.token}`,
         type: t.type,
         label: t.label,
         expiresAt: t.expiresAt?.toISOString() || null,

@@ -9,7 +9,7 @@ export const EventStatusEnum = z
   .enum(["DRAFT", "PENDING_REVIEW", "REVIEWED", "ARCHIVED"])
   .openapi("EventStatus")
 
-export const TokenTypeEnum = z.enum(["VALIDATOR", "MEDIA", "PREVALIDATOR"]).openapi("TokenType")
+export const TokenTypeEnum = z.enum(["VALIDATOR", "MEDIA", "PREVALIDATOR", "GALLERY"]).openapi("TokenType")
 
 // ============================================
 // EVENT SCHEMAS
@@ -84,6 +84,7 @@ export const CreateShareTokenSchema = z
       .max(365)
       .optional()
       .openapi({ example: 7 }),
+    onlyApproved: z.boolean().optional().openapi({ example: false }),
   })
   .openapi("CreateShareTokenRequest")
 
