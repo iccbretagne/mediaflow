@@ -244,6 +244,38 @@ export default async function EventDetailPage({
         </Card>
       )}
 
+      {/* Admin download links */}
+      {isAdmin && stats.total > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            Téléchargements admin
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <a href={`/api/events/${event.id}/download?filter=all`} download>
+                <Button variant="secondary" size="sm">
+                  Toutes les photos ({stats.total})
+                </Button>
+              </a>
+              {stats.approved > 0 && (
+                <a href={`/api/events/${event.id}/download?filter=approved`} download>
+                  <Button variant="secondary" size="sm">
+                    Validées ({stats.approved})
+                  </Button>
+                </a>
+              )}
+              {stats.rejected > 0 && (
+                <a href={`/api/events/${event.id}/download?filter=rejected`} download>
+                  <Button variant="secondary" size="sm">
+                    Rejetées ({stats.rejected})
+                  </Button>
+                </a>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Upload section */}
       <Card className="mb-8">
         <CardHeader>

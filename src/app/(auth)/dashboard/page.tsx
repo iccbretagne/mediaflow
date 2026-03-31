@@ -31,6 +31,8 @@ export default async function DashboardPage({
   const isAdmin = session.user.role === "ADMIN"
   const showAll = isAdmin && view === "all"
 
+  type PhotoStatus = "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED"
+
   type EventWithPhotos = {
     id: string
     name: string
@@ -47,8 +49,7 @@ export default async function DashboardPage({
     createdBy: {
       name: string | null
     }
-    photos: { status: "PENDING" | "APPROVED" | "REJECTED" }[]
-    _count: { photos: number }
+    media: { status: PhotoStatus }[]
   }
 
   const events = (await prisma.event.findMany({
@@ -65,10 +66,8 @@ export default async function DashboardPage({
       createdBy: {
         select: { name: true },
       },
-      _count: {
-        select: { photos: true },
-      },
-      photos: {
+      media: {
+        where: { type: "PHOTO" },
         select: { status: true },
       },
     },
@@ -82,9 +81,10 @@ export default async function DashboardPage({
 
   const eventsWithStats = events.map((event) => ({
     ...event,
-    approvedCount: event.photos.filter((p) => p.status === "APPROVED").length,
-    rejectedCount: event.photos.filter((p) => p.status === "REJECTED").length,
-    pendingCount: event.photos.filter((p) => p.status === "PENDING").length,
+    totalCount: event.media.length,
+    approvedCount: event.media.filter((p) => p.status === "APPROVED").length,
+    rejectedCount: event.media.filter((p) => p.status === "REJECTED" || p.status === "PREREJECTED").length,
+    pendingCount: event.media.filter((p) => p.status === "PENDING" || p.status === "PREVALIDATED").length,
   }))
 
   return (
@@ -192,7 +192,7 @@ export default async function DashboardPage({
                       {statusConfig[event.status as EventStatus].label}
                     </Badge>
                     <span className="text-sm font-medium text-gray-600">
-                      {event._count.photos} photo{event._count.photos > 1 ? "s" : ""}
+                      {event.totalCount} photo{event.totalCount > 1 ? "s" : ""}
                     </span>
                   </div>
 
@@ -214,7 +214,7 @@ export default async function DashboardPage({
                   </p>
 
                   {/* Stats */}
-                  {event._count.photos > 0 && (
+                  {event.totalCount > 0 && (
                     <div className="flex gap-4 mt-4 pt-4 border-t border-icc-violet/10">
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
