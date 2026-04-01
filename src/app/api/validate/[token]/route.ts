@@ -233,7 +233,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Validate allowed statuses per token type
     const allowedStatuses = isPrevalidator
       ? ["PREVALIDATED", "PREREJECTED", "PENDING"]
-      : ["APPROVED", "REJECTED"]
+      : ["APPROVED", "REJECTED", "PENDING"]
 
     for (const decision of body.decisions) {
       if (!allowedStatuses.includes(decision.status)) {
