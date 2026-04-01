@@ -106,6 +106,21 @@ export default function ValidationPage() {
   const isPrevalidator = data?.tokenType === "PREVALIDATOR"
   const labels = modeLabels[isPrevalidator ? "PREVALIDATOR" : "VALIDATOR"]
 
+  const autoSavePhoto = useCallback(
+    async (photoId: string, status: Decision | "PENDING") => {
+      try {
+        await fetch(`/api/validate/${token}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decisions: [{ photoId, status }] }),
+        })
+      } catch {
+        // Silent fail — local state intact, Confirmer button is the safety net
+      }
+    },
+    [token]
+  )
+
   // Decision handlers
   const makeDecision = useCallback(
     (decision: Decision) => {
@@ -140,18 +155,26 @@ export default function ValidationPage() {
   const undo = useCallback(() => {
     if (!undoAction) return
 
+    const photo = data?.photos.find((p) => p.id === undoAction.photoId)
+
     if (undoAction.prevStatus) {
       setDecisions((prev) => new Map(prev).set(undoAction.photoId, undoAction.prevStatus!))
+      if (photo?.type === "PHOTO") {
+        void autoSavePhoto(undoAction.photoId, undoAction.prevStatus)
+      }
     } else {
       setDecisions((prev) => {
         const next = new Map(prev)
         next.delete(undoAction.photoId)
         return next
       })
+      if (photo?.type === "PHOTO") {
+        void autoSavePhoto(undoAction.photoId, "PENDING")
+      }
     }
     setCurrentIndex((i) => Math.max(0, i - 1))
     setUndoAction(null)
-  }, [undoAction])
+  }, [undoAction, data, autoSavePhoto])
 
   const updateMediaStatus = useCallback(
     async (
@@ -213,6 +236,10 @@ export default function ValidationPage() {
         }
       }
 
+      if (currentPhoto.type === "PHOTO") {
+        void autoSavePhoto(currentPhoto.id, mappedDecision)
+      }
+
       makeDecision(mappedDecision)
     },
     [currentPhoto, updateMediaStatus, makeDecision, isPrevalidator]
@@ -220,20 +247,13 @@ export default function ValidationPage() {
 
   const toggleDecision = useCallback(
     (photoId: string) => {
-      setDecisions((prev) => {
-        const next = new Map(prev)
-        const current = next.get(photoId)
-        const approveStatus: Decision = isPrevalidator ? "PREVALIDATED" : "APPROVED"
-        const rejectStatus: Decision = isPrevalidator ? "PREREJECTED" : "REJECTED"
-        if (current === approveStatus) {
-          next.set(photoId, rejectStatus)
-        } else {
-          next.set(photoId, approveStatus)
-        }
-        return next
-      })
+      const approveStatus: Decision = isPrevalidator ? "PREVALIDATED" : "APPROVED"
+      const rejectStatus: Decision = isPrevalidator ? "PREREJECTED" : "REJECTED"
+      const newStatus = decisions.get(photoId) === approveStatus ? rejectStatus : approveStatus
+      setDecisions((prev) => new Map(prev).set(photoId, newStatus))
+      void autoSavePhoto(photoId, newStatus)
     },
-    [isPrevalidator]
+    [isPrevalidator, decisions, autoSavePhoto]
   )
 
   const submit = async () => {
