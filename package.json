@@ -2,6 +2,9 @@
   "name": "mediaflow",
   "version": "0.5.9",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -39,14 +42,16 @@
   "overrides": {
     "hono": "^4.11.7",
     "lodash": "^4.17.23",
-    "fast-xml-parser": "^5.3.4"
+    "fast-xml-parser": "^5.3.4",
+    "flatted": "^3.4.2",
+    "immutable": "^3.8.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/archiver": "^7.0.0",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/swagger-ui-react": "^5.18.0",
